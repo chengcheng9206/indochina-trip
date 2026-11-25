@@ -1,0 +1,2108 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Dylan 中南半島獨旅 🎒🌏</title>
+  
+  <!-- iOS PWA 支援 -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Dylan獨旅">
+  <meta name="theme-color" content="#faf7ee">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            appBg: '#faf7ee',
+            appYellow: '#ffd867',
+            appCardYellow: '#ffe289',
+            comicBorder: '#232323',
+            subGray: '#666666',
+            seaBlue: '#9ce0f5',
+            seaDeep: '#4cbde7',
+            mountainBlue: '#a1c7f4'
+          },
+          fontFamily: {
+            sans: ['"Zen Maru Gothic"', 'system-ui', 'sans-serif'],
+            mono: ['"Nunito"', 'monospace'],
+          },
+          boxShadow: {
+            'comic': '0 3.5px 0 #232323',
+            'comic-sm': '0 2px 0 #232323',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * {
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      box-sizing: border-box;
+    }
+    html, body {
+      background-color: #faf7ee;
+      font-family: 'Zen Maru Gothic', sans-serif;
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      min-height: 100vh;
+      color: #232323;
+    }
+    .comic-box {
+      border: 3px solid #232323;
+      border-radius: 28px;
+    }
+    .comic-box-md {
+      border: 2.5px solid #232323;
+      border-radius: 22px;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    @keyframes floatCoffee {
+      0% { transform: translateY(0) scale(0.6); opacity: 1; }
+      100% { transform: translateY(-32px) scale(1.15); opacity: 0; }
+    }
+    .coffee-drop {
+      position: absolute;
+      pointer-events: none;
+      animation: floatCoffee 0.85s ease-out forwards;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body class="flex flex-col min-h-screen bg-appBg">
+
+  <!-- 滿版 App 內容容器 -->
+  <div class="w-full max-w-5xl mx-auto flex-1 flex flex-col px-3 sm:px-6 md:px-8 pt-3 pb-28">
+
+    <!-- 頂部標題列 -->
+    <header class="flex items-start justify-between mb-3 px-1">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-black text-comicBorder tracking-tight flex items-center gap-1.5">
+          <span>中南半島深度獨旅</span>
+          <span class="inline-flex text-xl sm:text-2xl tracking-tight">🎒🧭🌏</span>
+        </h1>
+        <div class="text-[13px] font-bold text-subGray mt-1 flex items-center gap-1.5 flex-wrap">
+          <span>12/08 - 01/18</span>
+          <span>•</span>
+          <span>42 天跨四國在地探索</span>
+          <span>•</span>
+          <span class="text-comicBorder font-black">Dylan Solo Adventure</span>
+        </div>
+        <!-- 雲端同步狀態 -->
+        <div class="inline-flex items-center gap-1.5 bg-[#eaf8f1] border-2 border-[#54c489] text-[#1e8b4e] px-2.5 py-0.5 rounded-full text-xs font-black mt-1.5">
+          <span class="w-2 h-2 rounded-full bg-[#1e8b4e] animate-pulse"></span>
+          <span id="sync-status-badge">雲端同步準備中...</span>
+        </div>
+      </div>
+
+      <!-- 右上角功能按鈕群 -->
+      <div class="flex items-center gap-2 mt-0.5 shrink-0">
+        <button onclick="openAuthModal()" id="btn-auth-lock" class="h-11 sm:h-12 px-3 rounded-full comic-box bg-white flex items-center justify-center gap-1.5 hover:bg-neutral-50 active:scale-95 transition-transform shadow-comic-sm text-xs font-black">
+          <span id="auth-lock-icon">🔒</span>
+          <span id="auth-user-label">解鎖編輯</span>
+        </button>
+
+        <button onclick="shareTrip()" class="w-11 h-11 sm:w-12 sm:h-12 rounded-full comic-box bg-white flex items-center justify-center hover:bg-neutral-50 active:scale-95 transition-transform shrink-0 shadow-comic-sm">
+          <i data-lucide="share-2" class="w-5 h-5 text-comicBorder"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- ========================= TAB 1: 首頁 ========================= -->
+    <div id="tab-home" class="space-y-3.5">
+      
+      <!-- 1. 核心插畫卡片：中南半島喀斯特山水、熱氣球與背包客探險 -->
+      <div class="comic-box bg-[#b4e7fa] overflow-hidden relative cursor-pointer select-none max-h-[380px] flex items-center justify-center" onclick="dropCoffee(event)" title="點擊畫面幫 Dylan 沖一杯越南冰咖啡與放天燈">
+        <svg viewBox="0 0 400 250" class="w-full h-auto max-h-[380px] block object-contain" xmlns="http://www.w3.org/2000/svg">
+          <rect width="400" height="250" fill="#bce8fa"/>
+          
+          <!-- 左上角天氣標籤 -->
+          <g transform="translate(18, 14)">
+            <rect width="122" height="22" rx="11" fill="#FFFFFF" stroke="#232323" stroke-width="2.2"/>
+            <circle cx="15" cy="11" r="4.5" fill="#FBBF24" stroke="#232323" stroke-width="1.5"/>
+            <text x="25" y="15" font-family="'Zen Maru Gothic', sans-serif" font-size="10.2" font-weight="900" fill="#232323">中南半島涼季 22°C</text>
+          </g>
+
+          <!-- 右上角溫暖太陽與天燈 -->
+          <g transform="translate(348, 34)">
+            <circle cx="0" cy="0" r="18" fill="#FCD34D" stroke="#232323" stroke-width="2.5"/>
+            <circle cx="0" cy="0" r="14" fill="#FBBF24" stroke="#D97706" stroke-width="1.5" stroke-dasharray="2 2.5"/>
+          </g>
+          <g id="lantern-el" transform="translate(290, 42)" class="transition-transform duration-300">
+            <rect x="0" y="0" width="14" height="18" rx="4" fill="#fb923c" stroke="#232323" stroke-width="2"/>
+            <line x1="3" y1="18" x2="11" y2="18" stroke="#232323" stroke-width="2"/>
+            <circle cx="7" cy="14" r="2" fill="#fef08a"/>
+          </g>
+
+          <!-- 萬榮熱氣球點綴 -->
+          <g transform="translate(88, 52)">
+            <ellipse cx="10" cy="10" rx="9" ry="11" fill="#f472b6" stroke="#232323" stroke-width="2"/>
+            <rect x="7" y="22" width="6" height="4" rx="1" fill="#92400e" stroke="#232323" stroke-width="1.5"/>
+          </g>
+
+          <!-- 寧平 & 寮國萬榮喀斯特峰林 -->
+          <g stroke="#232323" stroke-width="2.8" stroke-linejoin="round">
+            <path d="M 90 190 Q 115 95 140 190 Z" fill="#86efac"/>
+            <path d="M 125 190 Q 160 72 195 190 Z" fill="#4ade80"/>
+            <path d="M 180 190 Q 210 105 240 190 Z" fill="#86efac"/>
+            <!-- 遠景吳哥窟剪影 -->
+            <polygon points="265,185 275,140 285,185" fill="#d6d3d1"/>
+            <polygon points="282,185 296,122 310,185" fill="#e7e5e4"/>
+            <polygon points="307,185 317,142 327,185" fill="#d6d3d1"/>
+          </g>
+
+          <!-- 湄公河 / 秋盆河河水 -->
+          <path d="M 0 176 Q 100 168 200 176 Q 300 184 400 174 L 400 250 L 0 250 Z" fill="#38bdf8" stroke="#232323" stroke-width="3"/>
+          <!-- 河岸草地與木棧平台 -->
+          <path d="M 0 202 Q 130 188 260 200 Q 340 208 400 196 L 400 250 L 0 250 Z" fill="#fde08d" stroke="#232323" stroke-width="3"/>
+
+          <!-- 棕櫚與竹林點綴 -->
+          <g>
+            <path d="M 65 222 Q 58 175 48 138" stroke="#92502f" stroke-width="5.5" fill="none" stroke-linecap="round"/>
+            <g stroke="#232323" stroke-width="2.2" fill="#22c55e">
+              <path d="M 48 138 Q 20 132 14 150 Q 30 142 48 138 Z"/>
+              <path d="M 48 138 Q 30 112 44 98 Q 52 118 48 138 Z"/>
+              <path d="M 48 138 Q 74 110 94 122 Q 76 128 48 138 Z"/>
+              <path d="M 48 138 Q 84 138 92 156 Q 70 144 48 138 Z"/>
+            </g>
+          </g>
+
+          <!-- 中老鐵路高鐵列車剪影 -->
+          <g transform="translate(245, 166)">
+            <rect x="0" y="0" width="76" height="11" rx="5" fill="#FFFFFF" stroke="#232323" stroke-width="2"/>
+            <line x1="6" y1="6" x2="70" y2="6" stroke="#ef4444" stroke-width="2"/>
+            <line x1="6" y1="8.5" x2="70" y2="8.5" stroke="#2563eb" stroke-width="1.5"/>
+          </g>
+
+          <!-- Dylan 背包客手持相機與冰咖啡探索中 -->
+          <g id="person-dylan" transform="translate(160, 146)" class="transition-transform duration-300">
+            <!-- 7kg 登山背包 -->
+            <rect x="-3" y="15" width="12" height="19" rx="4" fill="#ea580c" stroke="#232323" stroke-width="2.2"/>
+            <!-- 頭部與探險漁夫帽 -->
+            <circle cx="14" cy="10" r="7.5" fill="#FFDFC4" stroke="#232323" stroke-width="2.2"/>
+            <path d="M 5 7 Q 14 1 23 7 L 26 9 L 2 9 Z" fill="#2563eb" stroke="#232323" stroke-width="2"/>
+            <circle cx="13" cy="10.5" r="1.2" fill="#232323"/>
+            <circle cx="17" cy="10.5" r="1.2" fill="#232323"/>
+            <path d="M 13 13.5 Q 15 15.5 17 13.5" stroke="#232323" stroke-width="1.2" fill="none"/>
+            <!-- 身體 -->
+            <rect x="9" y="18" width="10" height="16" rx="3" fill="#FCD34D" stroke="#232323" stroke-width="2.2"/>
+            <!-- 胸前相機 -->
+            <rect x="11" y="21" width="8" height="6" rx="1.5" fill="#374151" stroke="#232323" stroke-width="1.5"/>
+            <circle cx="15" cy="24" r="1.8" fill="#93c5fd" stroke="#232323" stroke-width="1"/>
+            <!-- 舉手揮舞拿越南咖啡 -->
+            <line x1="19" y1="21" x2="26" y2="15" stroke="#232323" stroke-width="2.2" stroke-linecap="round"/>
+            <rect x="24" y="10" width="5" height="6" rx="1" fill="#d97706" stroke="#232323" stroke-width="1.5"/>
+            <!-- 雙腿邁步向前 -->
+            <line x1="11" y1="34" x2="7" y2="45" stroke="#232323" stroke-width="2.2" stroke-linecap="round"/>
+            <line x1="17" y1="34" x2="21" y2="45" stroke="#232323" stroke-width="2.2" stroke-linecap="round"/>
+          </g>
+        </svg>
+
+        <div id="coffee-container" class="absolute inset-0 pointer-events-none"></div>
+
+        <div class="absolute bottom-2.5 left-1/2 -translate-x-1/2 w-[92%] max-w-md">
+          <div class="bg-white/95 backdrop-blur-sm comic-box-md py-1 px-3 text-center shadow-comic-sm">
+            <span class="text-xs font-black text-comicBorder flex items-center justify-center gap-1">
+              <span>☕</span>
+              <span>點擊畫面幫 Dylan 干杯越南冰咖啡與放天燈！</span>
+              <span>🏮</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. 沿途氣候與探險狀態卡片 -->
+      <div class="bg-white comic-box p-3.5 flex items-center justify-between shadow-comic-sm">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-2xl border-2 border-comicBorder bg-[#fff7d1] flex items-center justify-center text-2xl shrink-0 shadow-comic-sm" id="weather-sun-box">
+            🌤️
+          </div>
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-sm sm:text-base font-black text-comicBorder">中南半島黃金涼季：14°C ~ 30°C</span>
+              <span class="text-[10px] font-black bg-[#fed476] text-comicBorder px-1.5 py-0.5 rounded border border-comicBorder">乾季少雨</span>
+            </div>
+            <div class="text-xs font-bold text-subGray mt-0.5">
+              北越寮國早晚微涼（備輕羽絨）、泰北柬埔寨晴爽無雨！
+            </div>
+          </div>
+        </div>
+        <button onclick="refreshWeather()" class="w-8 h-8 rounded-full hover:bg-neutral-100 flex items-center justify-center text-subGray shrink-0 active:rotate-180 transition-transform duration-300">
+          <i data-lucide="rotate-cw" class="w-4 h-4 text-comicBorder"></i>
+        </button>
+      </div>
+
+      <!-- 3. 出發倒數卡片 -->
+      <div class="bg-appYellow comic-box p-4 text-center shadow-comic-sm space-y-1">
+        <div class="text-[11px] font-black tracking-widest text-comicBorder font-mono uppercase">
+          COUNTDOWN TO INDOCHINA SOLO TRIP
+        </div>
+        <div class="text-xs font-black text-comicBorder" id="cd-title">
+          距離 12/08 桃園出發還有
+        </div>
+        <div class="pt-1 flex items-baseline justify-center gap-1.5 sm:gap-2">
+          <span class="text-3xl sm:text-4xl font-black font-sans text-comicBorder tracking-tight" id="cd-day">--</span>
+          <span class="text-lg sm:text-xl font-black text-comicBorder">天</span>
+          <span class="text-xl sm:text-2xl font-black font-mono text-comicBorder" id="cd-hour">--</span>
+          <span class="text-xs font-black text-comicBorder">時</span>
+          <span class="text-xl sm:text-2xl font-black font-mono text-comicBorder" id="cd-min">--</span>
+          <span class="text-xs font-black text-comicBorder">分</span>
+          <span class="text-xl sm:text-2xl font-black font-mono text-comicBorder" id="cd-sec">--</span>
+          <span class="text-xs font-black text-comicBorder">秒</span>
+        </div>
+      </div>
+
+      <!-- 4. 核心航班與跨國動線全覽 -->
+      <div class="bg-white comic-box p-4 shadow-comic-sm space-y-3.5">
+        <div class="flex items-center justify-between border-b-2 border-neutral-100 pb-2">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+            <span class="text-sm font-black text-comicBorder">已確認機票一覽（三段單程閉環）</span>
+          </div>
+          <span class="text-xs font-bold text-[#1e8b4e]">✓ 全程機票已開票</span>
+        </div>
+
+        <!-- 航段 1 -->
+        <div class="space-y-1">
+          <div class="flex items-center justify-between text-xs font-bold flex-wrap gap-1">
+            <span class="text-comicBorder font-black">① 台灣出發 • 12/08 (週二) 長榮航空</span>
+            <span class="font-mono bg-emerald-100 px-1.5 py-0.5 rounded text-emerald-900 border border-emerald-300">EVA BR 867</span>
+          </div>
+          <div class="flex items-center justify-between font-mono pt-0.5">
+            <div>
+              <span class="text-xl font-black text-comicBorder">09:50</span>
+              <span class="text-xs font-bold font-sans text-subGray ml-1">TPE 桃園</span>
+            </div>
+            <div class="flex flex-col items-center">
+              <span class="text-[10px] text-subGray font-sans">2h 00m</span>
+              <span class="text-xs font-black text-comicBorder">──────✈</span>
+            </div>
+            <div>
+              <span class="text-xl font-black text-comicBorder">11:50</span>
+              <span class="text-xs font-bold font-sans text-subGray ml-1">HKG 香港</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="border-t-2 border-dashed border-neutral-200"></div>
+
+        <!-- 航段 2 -->
+        <div class="space-y-1">
+          <div class="flex items-center justify-between text-xs font-bold flex-wrap gap-1">
+            <span class="text-comicBorder font-black">② 進入中越 • 12/09 (週三) 香港航空</span>
+            <span class="font-mono bg-amber-100 px-1.5 py-0.5 rounded text-comicBorder border border-amber-300">HX 546 • PNR: JMGX6P</span>
+          </div>
+          <div class="flex items-center justify-between font-mono pt-0.5">
+            <div>
+              <span class="text-xl font-black text-comicBorder">19:00</span>
+              <span class="text-xs font-bold font-sans text-subGray ml-1">HKG 香港 T2</span>
+            </div>
+            <div class="flex flex-col items-center">
+              <span class="text-[10px] text-subGray font-sans">2h 05m • A320</span>
+              <span class="text-xs font-black text-comicBorder">──────✈</span>
+            </div>
+            <div>
+              <span class="text-xl font-black text-comicBorder">20:05</span>
+              <span class="text-xs font-bold font-sans text-subGray ml-1">DAD 峴港</span>
+            </div>
+          </div>
+          <div class="text-[10px] text-subGray font-bold">票號：851-2307899293 • 經濟艙含點心</div>
+        </div>
+
+        <div class="border-t-2 border-dashed border-neutral-200"></div>
+
+        <!-- 航段 3 -->
+        <div class="space-y-1">
+          <div class="flex items-center justify-between text-xs font-bold flex-wrap gap-1">
+            <span class="text-comicBorder font-black">③ 閉環返台 • 01/18 (週一) 越捷航空</span>
+            <span class="font-mono bg-rose-100 px-1.5 py-0.5 rounded text-rose-900 border border-rose-300">VJ 842 • PNR: F3VCHJ</span>
+          </div>
+          <div class="flex items-center justify-between font-mono pt-0.5">
+            <div>
+              <span class="text-xl font-black text-comicBorder">13:35</span>
+              <span class="text-xs font-bold font-sans text-subGray ml-1">SGN 新山一 T2</span>
+            </div>
+            <div class="flex flex-col items-center">
+              <span class="text-[10px] text-subGray font-sans">3h 25m • A321</span>
+              <span class="text-xs font-black text-comicBorder">──────✈</span>
+            </div>
+            <div>
+              <span class="text-xl font-black text-comicBorder">18:00</span>
+              <span class="text-xs font-bold font-sans text-subGray ml-1">TPE 桃園 T1</span>
+            </div>
+          </div>
+          <div class="text-[10px] text-subGray font-bold">旅客：YANG YAO CHENG • 經濟艙</div>
+        </div>
+      </div>
+
+      <!-- 5. 42天在地探索據點總覽卡片 -->
+      <div class="bg-white comic-box p-4 shadow-comic-sm space-y-3">
+        <div class="flex items-center justify-between border-b-2 border-neutral-100 pb-2">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">🗺️</span>
+            <span class="text-sm font-black text-comicBorder">42 天跨四國在地深度探索路線</span>
+          </div>
+          <span class="text-xs font-bold text-[#1e8b4e]">不趕路慢旅環線</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 text-xs">
+          <div class="bg-[#faf7ee] p-3 rounded-2xl border-2 border-comicBorder space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="font-black text-comicBorder">1. 越南中北縱貫 (12/09 - 12/23)</span>
+              <span class="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-black border border-emerald-300">15 天</span>
+            </div>
+            <div class="text-subGray font-bold">峴港會安(5天) ➔ 順化寧平(5天) ➔ 河內(5天)</div>
+            <div class="text-subGray text-[11px]">古城水燈、海岸觀景鐵道、陸龍灣手搖船與下龍灣秘境</div>
+          </div>
+
+          <div class="bg-[#faf7ee] p-3 rounded-2xl border-2 border-comicBorder space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="font-black text-comicBorder">2. 寮國高鐵與秘境 (12/24 - 01/01)</span>
+              <span class="text-[10px] bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded font-black border border-amber-300">9 天</span>
+            </div>
+            <div class="text-subGray font-bold">龍坡邦(5天・過聖誕) ➔ 萬榮(2天) ➔ 永珍(2天)</div>
+            <div class="text-subGray text-[11px]">清晨僧侶托缽、關西瀑布跳水、萬榮溶洞獨木舟與中老高鐵</div>
+          </div>
+
+          <div class="bg-[#faf7ee] p-3 rounded-2xl border-2 border-comicBorder space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="font-black text-comicBorder">3. 泰北蘭納古都與山城 (01/02 - 01/10)</span>
+              <span class="text-[10px] bg-blue-100 text-blue-900 px-1.5 py-0.5 rounded font-black border border-blue-300">9 天</span>
+            </div>
+            <div class="text-subGray font-bold">清邁古城慢遊 ＋ 拜縣 (Pai) 山林騎行</div>
+            <div class="text-subGray text-[11px]">素帖山日出、泰式料理烹飪課、手工藝市集與山城溫泉</div>
+          </div>
+
+          <div class="bg-[#faf7ee] p-3 rounded-2xl border-2 border-comicBorder space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="font-black text-comicBorder">4. 高棉王朝奇蹟 ➔ 南越收尾 (01/11 - 01/18)</span>
+              <span class="text-[10px] bg-purple-100 text-purple-900 px-1.5 py-0.5 rounded font-black border border-purple-300">8 天</span>
+            </div>
+            <div class="text-subGray font-bold">暹粒吳哥窟(4天) ➔ 金邊(1天) ➔ 胡志明市(3天)</div>
+            <div class="text-subGray text-[11px]">小吳哥日出倒影、洞里薩湖水上人家與西貢街頭咖啡文化</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ========================= TAB 2: 行程 ========================= -->
+    <div id="tab-itinerary" class="hidden space-y-3">
+      <div class="flex items-center justify-between px-1">
+        <div>
+          <h2 class="text-xl font-black text-comicBorder">42 天分階段深度探索排程 🧭</h2>
+          <div class="text-[11px] text-subGray font-bold">依實際航班時間軸分成 9 大階段，聚焦在地人文與秘境體驗！</div>
+        </div>
+        <button onclick="openAddSpotModal()" class="comic-box-md bg-appYellow px-3 py-1.5 text-xs font-black shadow-comic-sm active:scale-95 shrink-0">
+          ＋ 新增行程
+        </button>
+      </div>
+
+      <!-- 9 大階段膠囊按鈕 -->
+      <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+        <button onclick="setDay(1)" id="d-btn-1" class="day-pill comic-box-md bg-appYellow px-3 py-1.5 text-xs font-black shrink-0 shadow-comic-sm flex flex-col items-start leading-tight">
+          <span>P1 12/08 - 12/09</span>
+          <span class="text-[10px] opacity-80 font-bold">✈️ 香港中停 ➔ HX546飛峴港</span>
+        </button>
+        <button onclick="setDay(2)" id="d-btn-2" class="day-pill comic-box-md bg-white px-3 py-1.5 text-xs font-bold shrink-0 flex flex-col items-start leading-tight">
+          <span>P2 12/10 - 12/13</span>
+          <span class="text-[10px] text-subGray font-bold">🏮 峴港山海 ＆ 會安古鎮</span>
+        </button>
+        <button onclick="setDay(3)" id="d-btn-3" class="day-pill comic-box-md bg-white px-3 py-1.5 text-xs font-bold shrink-0 flex flex-col items-start leading-tight">
+          <span>P3 12/14 - 12/18</span>
+          <span class="text-[10px] text-subGray font-bold">🚂 順化皇城 ➔ 寧平陸龍灣</span>
+        </button>
+        <button onclick="setDay(4)" id="d-btn-4" class="day-pill comic-box-md bg-white px-3 py-1.5 text-xs font-bold shrink-0 flex flex-col items-start leading-tight">
+          <span>P4 12/19 - 12/23</span>
+          <span class="text-[10px] text-subGray font-bold">🛶 河內古街 ＆ 下龍灣秘境</span>
+        </button>
+        <button onclick="setDay(5)" id="d-btn-5" class="day-pill comic-box-md bg-white px-3 py-1.5 text-xs font-bold shrink-0 flex flex-col items-start leading-tight">
+          <span>P5 12/24 - 12/28</span>
+          <span class="text-[10px] text-subGray font-bold">🎄 陸路進寮國・龍坡邦聖誕</span>
+        </button>
+        <button onclick="setDay(6)" id="d-btn-6" class="day-pill comic-box-md bg-white px-3 py-1.5 text-xs font-bold shrink-0 flex flex-col items-start leading-tight">
+          <span>P6 12/29 - 01/01</span>
+          <span class="text-[10px] text-subGray font-bold">🚄 中老鐵路：萬榮 ➔ 永珍</span>
+        </button>
+        <button onclick="setDay(7)" id="d-btn-7" class="day-pill comic-box-md bg-white px-3 py-1.5 text-xs font-bold shrink-0 flex flex-col items-start leading-tight">
+          <span>P7 01/02 - 01/10</span>
+          <span class="text-[10px] text-subGray font-bold">🏔️ 清邁蘭納文化 ＆ 拜縣山城</span>
+        </button>
+        <button onclick="setDay(8)" id="d-btn-8" class="day-pill comic-box-md bg-white px-3 py-1.5 text-xs font-bold shrink-0 flex flex-col items-start leading-tight">
+          <span>P8 01/11 - 01/14</span>
+          <span class="text-[10px] text-subGray font-bold">🏛️ 跨境柬埔寨・暹粒吳哥窟</span>
+        </button>
+        <button onclick="setDay(9)" id="d-btn-9" class="day-pill comic-box-md bg-white px-3 py-1.5 text-xs font-bold shrink-0 flex flex-col items-start leading-tight">
+          <span>P9 01/15 - 01/18</span>
+          <span class="text-[10px] text-subGray font-bold">🛫 金邊西貢 ➔ VJ842返台</span>
+        </button>
+      </div>
+
+      <div id="day-theme-banner" class="bg-[#f0f9ff] border-2 border-[#bae6fd] rounded-2xl p-2.5 px-3 flex items-center justify-between gap-2">
+        <span class="text-xs font-black text-[#0369a1]" id="day-theme-title">階段重點：桃園出發 ➔ 香港快閃吃喝 ➔ 飛抵中越峴港</span>
+        <span class="text-[11px] font-black text-comicBorder bg-white px-2 py-0.5 rounded border border-[#bae6fd] shrink-0">階段 1</span>
+      </div>
+
+      <div id="day-spots-container" class="bg-white comic-box p-4 shadow-comic-sm space-y-3"></div>
+    </div>
+
+    <!-- ========================= TAB 3: 在地美食 & 特色據點 ========================= -->
+    <div id="tab-food" class="hidden space-y-3">
+      <div class="px-1">
+        <h2 class="text-xl font-black text-comicBorder">在地必吃美食 & 特色風味據點 🍜☕</h2>
+        <div class="text-xs text-subGray font-bold mt-0.5">嚴選四國最道地的街頭小吃、百年老店、夜市名攤與特色文化空間！</div>
+      </div>
+
+      <!-- 城市篩選標籤 -->
+      <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+        <button onclick="filterFood('all')" id="food-filter-all" class="food-filter-pill comic-box-md bg-appYellow px-3 py-1 text-xs font-black shrink-0 shadow-comic-sm">
+          🌏 全部特色據點 (16處)
+        </button>
+        <button onclick="filterFood('vn')" id="food-filter-vn" class="food-filter-pill comic-box-md bg-white px-3 py-1 text-xs font-bold shrink-0">
+          🇻🇳 越南 (會安/順化/河內/西貢)
+        </button>
+        <button onclick="filterFood('la')" id="food-filter-la" class="food-filter-pill comic-box-md bg-white px-3 py-1 text-xs font-bold shrink-0">
+          🇱🇦 寮國 (龍坡邦/萬榮)
+        </button>
+        <button onclick="filterFood('th')" id="food-filter-th" class="food-filter-pill comic-box-md bg-white px-3 py-1 text-xs font-bold shrink-0">
+          🇹🇭 泰北清邁 & 拜縣
+        </button>
+        <button onclick="filterFood('kh')" id="food-filter-kh" class="food-filter-pill comic-box-md bg-white px-3 py-1 text-xs font-bold shrink-0">
+          🇰🇭 柬埔寨暹粒
+        </button>
+      </div>
+
+      <div id="food-cards-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <!-- 1. 越南峴港 Mi Quang Ba Mua -->
+        <div data-city="vn" class="food-card bg-white comic-box p-3.5 shadow-comic-sm space-y-2">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-[10px] font-black bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-300">🇻🇳 峴港必吃</span>
+                <span class="font-black text-sm text-comicBorder">Mì Quảng Bà Mua 廣南麵</span>
+                <span class="text-[10px] font-black bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded border border-amber-300">★ 4.4 中越靈魂美食</span>
+              </div>
+              <div class="text-[11px] font-black text-[#15803d] mt-0.5">💰 價位：約 45,000 ~ 65,000 VND</div>
+            </div>
+            <a href="https://maps.google.com/?q=Mi+Quang+Ba+Mua+Da+Nang" target="_blank" rel="noopener noreferrer" class="comic-box-md bg-[#faf7ee] hover:bg-appYellow px-2.5 py-1 text-[11px] font-black text-comicBorder flex items-center gap-1 shrink-0 shadow-comic-sm transition-colors">
+              <span>📍 地圖</span>
+            </a>
+          </div>
+          <p class="text-xs text-subGray font-bold leading-relaxed">
+            中越最具代表性的薑黃寬米粉！濃郁少汁高湯鋪滿大蝦、鵪鶉蛋、花生碎與香脆芝麻米餅，加入青檸與生菜香草超級開胃。
+          </p>
+        </div>
+
+        <!-- 2. 越南會安 Banh Mi Phuong -->
+        <div data-city="vn" class="food-card bg-white comic-box p-3.5 shadow-comic-sm space-y-2">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-[10px] font-black bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-300">🇻🇳 會安必吃</span>
+                <span class="font-black text-sm text-comicBorder">Bánh Mì Phượng 法國麵包</span>
+                <span class="text-[10px] font-black bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded border border-amber-300">★ 4.5 名人推薦</span>
+              </div>
+              <div class="text-[11px] font-black text-[#15803d] mt-0.5">💰 價位：約 35,000 VND (約 NT$45)</div>
+            </div>
+            <a href="https://maps.google.com/?q=Banh+Mi+Phuong+Hoi+An" target="_blank" rel="noopener noreferrer" class="comic-box-md bg-[#faf7ee] hover:bg-appYellow px-2.5 py-1 text-[11px] font-black text-comicBorder flex items-center gap-1 shrink-0 shadow-comic-sm transition-colors">
+              <span>📍 地圖</span>
+            </a>
+          </div>
+          <p class="text-xs text-subGray font-bold leading-relaxed">
+            主廚波登盛讚「世界上最好吃的法國麵包」！現烤酥脆法棍夾入特製肝醬、炭烤肉片、香草與秘製醬汁，會安古鎮散步必買。
+          </p>
+        </div>
+
+        <!-- 3. 越南河內 Giang Cafe 雞蛋咖啡 -->
+        <div data-city="vn" class="food-card bg-white comic-box p-3.5 shadow-comic-sm space-y-2">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-[10px] font-black bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-300">🇻🇳 河內經典</span>
+                <span class="font-black text-sm text-comicBorder">Giảng Cafe 創始雞蛋咖啡</span>
+                <span class="text-[10px] font-black bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded border border-amber-300">★ 4.5 (1946年老店)</span>
+              </div>
+              <div class="text-[11px] font-black text-[#15803d] mt-0.5">💰 價位：約 35,000 ~ 50,000 VND</div>
+            </div>
+            <a href="https://maps.google.com/?q=Cafe+Giang+Hanoi" target="_blank" rel="noopener noreferrer" class="comic-box-md bg-[#faf7ee] hover:bg-appYellow px-2.5 py-1 text-[11px] font-black text-comicBorder flex items-center gap-1 shrink-0 shadow-comic-sm transition-colors">
+              <span>📍 地圖</span>
+            </a>
+          </div>
+          <p class="text-xs text-subGray font-bold leading-relaxed">
+            藏身三十六古街小巷內的雞蛋咖啡發源地！綿密如提拉米蘇的蛋黃奶泡覆蓋在濃郁羅布斯塔黑咖啡上，感受老河內慢時光。
+          </p>
+        </div>
+
+        <!-- 4. 越南順化 Bun Bo Hue Ba Tuyet -->
+        <div data-city="vn" class="food-card bg-white comic-box p-3.5 shadow-comic-sm space-y-2">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-[10px] font-black bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-300">🇻🇳 順化古都</span>
+                <span class="font-black text-sm text-comicBorder">Bún Bò Huế Bà Tuyết 順化牛肉粉</span>
+                <span class="text-[10px] font-black bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded border border-amber-300">★ 4.5 宮廷風味</span>
+              </div>
+              <div class="text-[11px] font-black text-[#15803d] mt-0.5">💰 價位：約 40,000 ~ 55,000 VND</div>
+            </div>
+            <a href="https://maps.google.com/?q=Bun+Bo+Hue+Ba+Tuyet+Hue" target="_blank" rel="noopener noreferrer" class="comic-box-md bg-[#faf7ee] hover:bg-appYellow px-2.5 py-1 text-[11px] font-black text-comicBorder flex items-center gap-1 shrink-0 shadow-comic-sm transition-colors">
+              <span>📍 地圖</span>
+            </a>
+          </div>
+          <p class="text-xs text-subGray font-bold leading-relaxed">
+            順化古都必嚐道地早餐！香茅與牛骨熬製的微辣紅湯頭，搭配Q彈粗圓米粉、軟嫩牛腱、豬蹄與手工蟹肉丸，冬季吃超暖胃。
+          </p>
+        </div>
+
+        <!-- 5. 越南河內 Bun Cha Huong Lien 歐巴馬烤肉米線 -->
+        <div data-city="vn" class="food-card bg-white comic-box p-3.5 shadow-comic-sm space-y-2">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-[10px] font-black bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-300">🇻🇳 河內美食</span>
+                <span class="font-black text-sm text-comicBorder">Bún Chả Hương Liên 烤肉米線</span>
+                <span class="text-[10px] font-black bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded border border-amber-300">★ 4.3 必吃套餐</span>
+              </div>
+              <div class="text-[11px] font-black text-[#15803d] mt-0.5">💰 價位：約 60,000 ~ 95,000 VND</div>
+            </div>
+            <a href="https://maps.google.com/?q=Bun+Cha+Huong+Lien+Hanoi" target="_blank" rel="noopener noreferrer" class="comic-box-md bg-[#faf7ee] hover:bg-appYellow px-2.5 py-1 text-[11px] font-black text-comicBorder flex items-center gap-1 shrink-0 shadow-comic-sm transition-colors">
+              <span>📍 地圖</span>
+            </a>
+          </div>
+          <p class="text-xs text-subGray font-bold leading-relaxed">
+            炭烤豬肉片與肉丸浸在酸甜魚露湯汁中，夾起米線、香草與炸海鮮春捲大口吃，再配一瓶冰河內啤酒超痛快。
+          </p>
+        </div>
+
+        <!-- 6. 寮國龍坡邦 Khao Soi Noodle Soup -->
+        <div data-city="la" class="food-card bg-white comic-box p-3.5 shadow-comic-sm space-y-2">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-[10px] font-black bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded border border-amber-300">🇱🇦 龍坡邦隱藏版</span>
+                <span class="font-black text-sm text-comicBorder">Xieng Thong Noodle 寮式肉醬河粉</span>
+                <span class="text-[10px] font-black bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-300">🍜 香通寺旁老攤</span>
+              </div>
+              <div class="text-[11px] font-black text-[#15803d] mt-0.5">💰 價位：約 30,000 ~ 45,000 LAK</div>
+            </div>
+            <a href="https://maps.google.com/?q=Wat+Xiengthong+Luang+Prabang" target="_blank" rel="noopener noreferrer" class="comic-box-md bg-[#faf7ee] hover:bg-appYellow px-2.5 py-1 text-[11px] font-black text-comicBorder flex items-center gap-1 shrink-0 shadow-comic-sm transition-colors">
+              <span>📍 地圖</span>
+            </a>
+          </div>
+          <p class="text-xs text-subGray font-bold leading-relaxed">
+            清晨看完僧侶布施與香通寺後必吃！清甜大骨湯河粉上方舀一大匙番茄炒豬肉醬與發酵豆醬，香氣獨特全寮國只有龍坡邦有。
+          </p>
+        </div>
+
+        <!-- 7. 寮國龍坡邦 夜市自助素食與糯米飯 -->
+        <div data-city="la" class="food-card bg-white comic-box p-3.5 shadow-comic-sm space-y-2">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-[10px] font-black bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded border border-amber-300">🇱🇦 龍坡邦美食</span>
+                <span class="font-black text-sm text-comicBorder">龍坡邦夜市 & 湄公河炭烤魚</span>
+                <span class="text-[10px] font-black bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded border border-amber-300">★ 4.5 背包客天堂</span>
+              </div>
+              <div class="text-[11px] font-black text-[#15803d] mt-0.5">💰 價位：約 30,000 ~ 80,000 LAK</div>
+            </div>
+            <a href="https://maps.google.com/?q=Luang+Prabang+Night+Market" target="_blank" rel="noopener noreferrer" class="comic-box-md bg-[#faf7ee] hover:bg-appYellow px-2.5 py-1 text-[11px] font-black text-comicBorder flex items-center gap-1 shrink-0 shadow-comic-sm transition-colors">
+              <span>📍 地圖</span>
+            </a>
+          </div>
+          <p class="text-xs text-subGray font-bold leading-relaxed">
+            夜市小巷裡的鹽烤湄公河魚、香茅烤雞與竹籠糯米飯（Sticky Rice），搭配一瓶冰涼的 Beerlao（寮國啤酒）就是完美晚餐。
+          </p>
+        </div>
+
+        <!-- 8. 寮國萬榮 Pull Mind Cafe -->
+        <div data-city="la" class="food-card bg-white comic-box p-3.5 shadow-comic-sm space-y-2">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-[10px] font-black bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded border border-amber-300">🇱🇦 萬榮秘境</span>
+                <span class="font-black text-sm text-comicBorder">Pull Mind Cafe 喀斯特山景秘境</span>
+                <span class="text-[10px] font-black bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-300">🏔️ 熱氣球視角</span>
+              </div>
+              <div class="text-[11px] font-black text-[#15803d] mt-0.5">💰 價位：約 40,000 ~ 70,000 LAK</div>
+            </div>
+            <a href="https://maps.google.com/?q=Pull+Mind+Cafe+Vang+Vieng" target="_blank" rel="noopener noreferrer" class="comic-box-md bg-[#faf7ee] hover:bg-appYellow px-2.5 py-1 text-[11px] font-black text-comicBorder flex items-center gap-1 shrink-0 shadow-comic-sm transition-colors">
+              <span>📍 地圖</span>
+            </a>
+          </div>
+          <p class="text-xs text-subGray font-bold leading-relaxed">
+            正對萬榮標誌性石灰岩山峰與熱氣球起飛點！玩完南松河獨木舟後來這裡躺懶骨頭喝冰拿鐵，看夕陽把山壁染成金紅色。
+          </p>
+        </div>
+
+        <!-- 9. 泰國清邁 Jing Jai Market 真心市集 -->
+        <div data-city="th" class="food-card bg-white comic-box p-3.5 shadow-comic-sm space-y-2">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-[10px] font-black bg-blue-100 text-blue-900 px-1.5 py-0.5 rounded border border-blue-300">🇹🇭 清邁文創市集</span>
+                <span class="font-black text-sm text-comicBorder">Jing Jai Market 真心農夫手作市集</span>
+                <span class="text-[10px] font-black bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded border border-amber-300">🌿 週六日早市必逛</span>
+              </div>
+              <div class="text-[11px] font-black text-[#15803d] mt-0.5">💰 價位：免費入場（早午餐約 80 ~ 150 THB）</div>
+            </div>
+            <a href="https://maps.google.com/?q=Jing+Jai+Market+Chiang+Mai" target="_blank" rel="noopener noreferrer" class="comic-box-md bg-[#faf7ee] hover:bg-appYellow px-2.5 py-1 text-[11px] font-black text-comicBorder flex items-center gap-1 shrink-0 shadow-comic-sm transition-colors">
+              <span>📍 地圖</span>
+            </a>
+          </div>
+          <p class="text-xs text-subGray font-bold leading-relaxed">
+            清邁最有質感的綠蔭文創市集！集結泰北有機小農、藍染手作職人和現場民謠演唱，早上來逛超涼爽愜意。
+          </p>
+        </div>
+
+        <!-- 10. 泰國清邁 Baan Kang Wat 藝術村 -->
+        <div data-city="th" class="food-card bg-white comic-box p-3.5 shadow-comic-sm space-y-2">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-[10px] font-black bg-blue-100 text-blue-900 px-1.5 py-0.5 rounded border border-blue-300">🇹🇭 清邁秘境聚落</span>
+                <span class="font-black text-sm text-comicBorder">Baan Kang Wat 素帖山腳藝術村</span>
+                <span class="text-[10px] font-black bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded border border-amber-300">🎨 森林系木屋群</span>
+              </div>
+              <div class="text-[11px] font-black text-[#15803d] mt-0.5">💰 價位：免費參觀（手作與茶飲約 100 THB）</div>
+            </div>
+            <a href="https://maps.google.com/?q=Baan+Kang+Wat+Chiang+Mai" target="_blank" rel="noopener noreferrer" class="comic-box-md bg-[#faf7ee] hover:bg-appYellow px-2.5 py-1 text-[11px] font-black text-comicBorder flex items-center gap-1 shrink-0 shadow-comic-sm transition-colors">
+              <span>📍 地圖</span>
+            </a>
+          </div>
+          <p class="text-xs text-subGray font-bold leading-relaxed">
+            藏身素帖山腳下的森林藝術家村落！由十幾棟泰北傳統木屋組成，有陶藝工作室、獨立書店、露天劇場與手沖咖啡館。
+          </p>
+        </div>
+
+        <!-- 11. 泰國清邁 Khao Soi Khun Yai 泰北咖哩麵 -->
+        <div data-city="th" class="food-card bg-white comic-box p-3.5 shadow-comic-sm space-y-2">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-[10px] font-black bg-blue-100 text-blue-900 px-1.5 py-0.5 rounded border border-blue-300">🇹🇭 清邁必吃</span>
+                <span class="font-black text-sm text-comicBorder">Khao Soi Khun Yai 奶奶咖哩麵</span>
+                <span class="text-[10px] font-black bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded border border-amber-300">★ 4.5 (古城北門)</span>
+              </div>
+              <div class="text-[11px] font-black text-[#15803d] mt-0.5">💰 價位：約 50 ~ 70 THB (僅營業 10:00-14:00)</div>
+            </div>
+            <a href="https://maps.google.com/?q=Khao+Soi+Khun+Yai+Chiang+Mai" target="_blank" rel="noopener noreferrer" class="comic-box-md bg-[#faf7ee] hover:bg-appYellow px-2.5 py-1 text-[11px] font-black text-comicBorder flex items-center gap-1 shrink-0 shadow-comic-sm transition-colors">
+              <span>📍 地圖</span>
+            </a>
+          </div>
+          <p class="text-xs text-subGray font-bold leading-relaxed">
+            清邁第一名泰北金麵（Khao Soi）！濃郁椰香咖哩湯頭配燉到入口即化的雞腿，上方鋪滿香脆炸雞蛋麵，擠點檸檬汁超銷魂。
+          </p>
+        </div>
+
+        <!-- 12. 泰國清邁 鳳飛飛豬腳飯 -->
+        <div data-city="th" class="food-card bg-white comic-box p-3.5 shadow-comic-sm space-y-2">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-[10px] font-black bg-blue-100 text-blue-900 px-1.5 py-0.5 rounded border border-blue-300">🇹🇭 清邁宵夜</span>
+                <span class="font-black text-sm text-comicBorder">昌卜克夜市 鳳飛飛豬腳飯</span>
+                <span class="text-[10px] font-black bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded border border-amber-300">★ 4.4 銅板美食</span>
+              </div>
+              <div class="text-[11px] font-black text-[#15803d] mt-0.5">💰 價位：約 50 ~ 80 THB (晚上 17:00 開賣)</div>
+            </div>
+            <a href="https://maps.google.com/?q=Cowboy+Hat+Lady+Khao+Kha+Moo+Chiang+Mai" target="_blank" rel="noopener noreferrer" class="comic-box-md bg-[#faf7ee] hover:bg-appYellow px-2.5 py-1 text-[11px] font-black text-comicBorder flex items-center gap-1 shrink-0 shadow-comic-sm transition-colors">
+              <span>📍 地圖</span>
+            </a>
+          </div>
+          <p class="text-xs text-subGray font-bold leading-relaxed">
+            戴牛仔帽老闆娘的招牌滷豬腳飯！膠質滿滿入口即化、滷汁鹹甜不膩，搭配半熟溏心蛋與酸菜，一盤只要 50 泰銖。
+          </p>
+        </div>
+
+        <!-- 13. 柬埔寨暹粒 Haven 公益訓練餐廳 -->
+        <div data-city="kh" class="food-card bg-white comic-box p-3.5 shadow-comic-sm space-y-2">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-[10px] font-black bg-purple-100 text-purple-900 px-1.5 py-0.5 rounded border border-purple-300">🇰🇭 暹粒特色</span>
+                <span class="font-black text-sm text-comicBorder">HAVEN 庭園高棉料理餐廳</span>
+                <span class="text-[10px] font-black bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-300">★ 4.8 口碑冠軍</span>
+              </div>
+              <div class="text-[11px] font-black text-[#15803d] mt-0.5">💰 價位：約 US$ 6 ~ 10 (建議提前訂位)</div>
+            </div>
+            <a href="https://maps.google.com/?q=HAVEN+Restaurant+Siem+Reap" target="_blank" rel="noopener noreferrer" class="comic-box-md bg-[#faf7ee] hover:bg-appYellow px-2.5 py-1 text-[11px] font-black text-comicBorder flex items-center gap-1 shrink-0 shadow-comic-sm transition-colors">
+              <span>📍 地圖</span>
+            </a>
+          </div>
+          <p class="text-xs text-subGray font-bold leading-relaxed">
+            暹粒評價最高的庭園餐廳，同時培訓當地弱勢青年餐飲技能。香料咖哩與高棉烤肉水準極高，氣氛溫馨有溫度。
+          </p>
+        </div>
+
+        <!-- 14. 柬埔寨暹粒 Khmer Kitchen 高棉阿莫克 -->
+        <div data-city="kh" class="food-card bg-white comic-box p-3.5 shadow-comic-sm space-y-2">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-[10px] font-black bg-purple-100 text-purple-900 px-1.5 py-0.5 rounded border border-purple-300">🇰🇭 暹粒必吃</span>
+                <span class="font-black text-sm text-comicBorder">Khmer Kitchen Restaurant</span>
+                <span class="text-[10px] font-black bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded border border-amber-300">★ 4.4 老市場旁</span>
+              </div>
+              <div class="text-[11px] font-black text-[#15803d] mt-0.5">💰 價位：約 US$ 5 ~ 9 / 人</div>
+            </div>
+            <a href="https://maps.google.com/?q=Khmer+Kitchen+Restaurant+Siem+Reap" target="_blank" rel="noopener noreferrer" class="comic-box-md bg-[#faf7ee] hover:bg-appYellow px-2.5 py-1 text-[11px] font-black text-comicBorder flex items-center gap-1 shrink-0 shadow-comic-sm transition-colors">
+              <span>📍 地圖</span>
+            </a>
+          </div>
+          <p class="text-xs text-subGray font-bold leading-relaxed">
+            品嚐柬埔寨國菜「Fish Amok（香蕉葉椰奶蒸魚咖哩）」與「Lok Lak（貢布黑胡椒炒牛肉）」，香料層次溫潤超級下飯。
+          </p>
+        </div>
+
+        <!-- 15. 越南胡志明市 Banh Xeo 46A 越式煎餅 -->
+        <div data-city="vn" class="food-card bg-white comic-box p-3.5 shadow-comic-sm space-y-2">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-[10px] font-black bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-300">🇻🇳 胡志明老店</span>
+                <span class="font-black text-sm text-comicBorder">Bánh Xèo 46A 炭火越式煎餅</span>
+                <span class="text-[10px] font-black bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded border border-amber-300">★ 4.2 西貢招牌</span>
+              </div>
+              <div class="text-[11px] font-black text-[#15803d] mt-0.5">💰 價位：約 90,000 ~ 130,000 VND</div>
+            </div>
+            <a href="https://maps.google.com/?q=Banh+Xeo+46A+Ho+Chi+Minh" target="_blank" rel="noopener noreferrer" class="comic-box-md bg-[#faf7ee] hover:bg-appYellow px-2.5 py-1 text-[11px] font-black text-comicBorder flex items-center gap-1 shrink-0 shadow-comic-sm transition-colors">
+              <span>📍 地圖</span>
+            </a>
+          </div>
+          <p class="text-xs text-subGray font-bold leading-relaxed">
+            柴火大鍋現煎金黃酥脆薑黃餅皮，包入鮮蝦、五花肉與綠豆芽，用生菜與多種香草捲起來沾魚露吃超道地！
+          </p>
+        </div>
+
+        <!-- 16. 越南胡志明市 Pho Hoa Pasteur -->
+        <div data-city="vn" class="food-card bg-white comic-box p-3.5 shadow-comic-sm space-y-2">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-[10px] font-black bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-300">🇻🇳 胡志明必吃</span>
+                <span class="font-black text-sm text-comicBorder">Phở Hòa Pasteur 錦麗河粉</span>
+                <span class="text-[10px] font-black bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded border border-amber-300">★ 4.3 半世紀老店</span>
+              </div>
+              <div class="text-[11px] font-black text-[#15803d] mt-0.5">💰 價位：約 85,000 ~ 105,000 VND</div>
+            </div>
+            <a href="https://maps.google.com/?q=Pho+Hoa+Pasteur+Ho+Chi+Minh" target="_blank" rel="noopener noreferrer" class="comic-box-md bg-[#faf7ee] hover:bg-appYellow px-2.5 py-1 text-[11px] font-black text-comicBorder flex items-center gap-1 shrink-0 shadow-comic-sm transition-colors">
+              <span>📍 地圖</span>
+            </a>
+          </div>
+          <p class="text-xs text-subGray font-bold leading-relaxed">
+            南越派系牛肉河粉代表！湯頭清甜回甘，桌上有滿滿九層塔、豆芽菜與青檸免費無限加，搭一根酥脆油條畫下完美句點。
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================= TAB 4: 獨旅記帳與匯率 ========================= -->
+    <div id="tab-expense" class="hidden space-y-3.5">
+      <div class="flex items-center justify-between px-1">
+        <h2 class="text-xl font-black text-comicBorder">獨旅記帳 & 多幣別換算 💰</h2>
+        <div class="flex items-center gap-2">
+          <button onclick="forceManualCloudSync()" class="comic-box-md bg-white hover:bg-neutral-50 px-2.5 py-1.5 text-xs font-black shadow-comic-sm active:scale-95" title="重新從雲端同步最新資料">
+            🔄 同步
+          </button>
+          <button onclick="openExpenseModal()" class="comic-box-md bg-appYellow px-3.5 py-1.5 text-xs font-black shadow-comic-sm active:scale-95">
+            ＋ 記一筆
+          </button>
+        </div>
+      </div>
+
+      <!-- 多國即時匯率換算機 -->
+      <div class="bg-white comic-box p-4 shadow-comic-sm space-y-2.5">
+        <div class="flex items-center justify-between border-b-2 border-neutral-100 pb-2 flex-wrap gap-2">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">💱</span>
+            <div>
+              <div class="text-sm font-black text-comicBorder flex items-center gap-1.5">
+                <span>中南半島多幣別換算機</span>
+                <span id="rate-live-tag" class="text-[10px] bg-emerald-100 text-emerald-800 font-black px-1.5 py-0.2 rounded border border-emerald-300">即時匯率</span>
+              </div>
+              <div class="text-[10px] text-subGray font-bold" id="rate-update-time">選擇外幣即可與新臺幣 (TWD) 雙向即時換算</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5 text-xs font-bold text-comicBorder">
+            <button onclick="fetchLiveExchangeRate(true)" class="p-1.5 rounded-xl hover:bg-neutral-100 border border-neutral-300 text-comicBorder transition-transform active:rotate-180" title="點擊更新實時最新匯率">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+            </button>
+            <select id="calc-currency-select" onchange="onCalcCurrencyChange(this.value)" class="px-2 py-1 rounded-xl border-2 border-comicBorder font-black text-comicBorder bg-[#faf7ee]">
+              <option value="VND">🇻🇳 越南盾 (VND)</option>
+              <option value="LAK">🇱🇦 寮國基普 (LAK)</option>
+              <option value="THB">🇹🇭 泰銖 (THB)</option>
+              <option value="USD">🇰🇭 美金 (USD)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-0.5">
+          <div class="bg-[#faf7ee] p-2.5 rounded-2xl border-2 border-comicBorder flex items-center justify-between gap-2">
+            <span class="text-xs font-black text-comicBorder shrink-0" id="calc-foreign-label">🇻🇳 越南盾 (VND)</span>
+            <input type="number" id="calc-foreign-input" placeholder="0" oninput="convertFromForeign(this.value)" class="w-full text-right font-mono font-black text-lg bg-transparent focus:outline-none text-comicBorder">
+          </div>
+          <div class="bg-[#faf7ee] p-2.5 rounded-2xl border-2 border-comicBorder flex items-center justify-between gap-2">
+            <span class="text-xs font-black text-comicBorder shrink-0">🇹🇼 新臺幣 (TWD)</span>
+            <input type="number" id="calc-twd-input" placeholder="0" oninput="convertFromTWD(this.value)" class="w-full text-right font-mono font-black text-lg bg-transparent focus:outline-none text-comicBorder">
+          </div>
+        </div>
+
+        <div id="calc-quick-buttons" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1 text-[11px] font-bold">
+          <!-- 由 JS 依幣別動態產生快捷金額 -->
+        </div>
+      </div>
+
+      <!-- Dylan 42 天獨旅總預算與實際開銷總覽 -->
+      <div class="bg-appYellow comic-box p-4 shadow-comic-sm space-y-2.5">
+        <div class="flex items-center justify-between border-b-2 border-comicBorder/20 pb-2">
+          <span class="text-sm font-black text-comicBorder flex items-center gap-1.5">
+            <span>📊</span> Dylan 42 天總開銷統計（自動折合台幣）
+          </span>
+          <button onclick="copySplitResult()" class="text-xs font-black text-comicBorder bg-white px-2.5 py-1 rounded-xl border border-comicBorder hover:bg-neutral-50 active:scale-95 shadow-comic-sm">
+            複製帳目摘要
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+          <div class="bg-white p-3 rounded-2xl border-2 border-comicBorder space-y-1">
+            <div class="text-[11px] font-bold text-subGray">累計總花費（折合台幣）</div>
+            <div class="text-2xl font-black font-mono text-comicBorder">NT$ <span id="solo-grand-twd">0</span></div>
+            <div class="text-[10px] font-bold text-[#1e8b4e]">平均每日約 NT$ <span id="solo-daily-avg">0</span> / 天</div>
+          </div>
+
+          <div class="bg-white p-3 rounded-2xl border-2 border-comicBorder space-y-1">
+            <div class="text-[11px] font-bold text-subGray">事前固定支出（機票 / 簽證）</div>
+            <div class="text-xl font-black font-mono text-comicBorder">NT$ <span id="solo-fixed-twd">0</span></div>
+            <div class="text-[10px] text-subGray font-bold">含越簽 US$50、HX546、VJ842 等</div>
+          </div>
+
+          <div class="bg-white p-3 rounded-2xl border-2 border-comicBorder space-y-1">
+            <div class="text-[11px] font-bold text-subGray">當地日常消費（食宿 / 交通）</div>
+            <div class="text-xl font-black font-mono text-comicBorder">NT$ <span id="solo-local-twd">0</span></div>
+            <div class="text-[10px] text-subGray font-bold">自動換算 VND / LAK / THB / USD</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 各國幣別累計小計卡片 -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+        <div class="bg-white p-2.5 rounded-2xl comic-box-md shadow-comic-sm">
+          <div class="text-[10px] font-bold text-subGray">🇻🇳 越南盾累計</div>
+          <div class="font-mono font-black text-sm text-comicBorder mt-0.5"><span id="sum-vnd">0</span> ₫</div>
+        </div>
+        <div class="bg-white p-2.5 rounded-2xl comic-box-md shadow-comic-sm">
+          <div class="text-[10px] font-bold text-subGray">🇱🇦 寮國基普累計</div>
+          <div class="font-mono font-black text-sm text-comicBorder mt-0.5"><span id="sum-lak">0</span> ₭</div>
+        </div>
+        <div class="bg-white p-2.5 rounded-2xl comic-box-md shadow-comic-sm">
+          <div class="text-[10px] font-bold text-subGray">🇹🇭 泰銖累計</div>
+          <div class="font-mono font-black text-sm text-comicBorder mt-0.5"><span id="sum-thb">0</span> ฿</div>
+        </div>
+        <div class="bg-white p-2.5 rounded-2xl comic-box-md shadow-comic-sm">
+          <div class="text-[10px] font-bold text-subGray">🇰🇭 美金累計</div>
+          <div class="font-mono font-black text-sm text-comicBorder mt-0.5">$ <span id="sum-usd">0</span></div>
+        </div>
+      </div>
+
+      <!-- 費用明細列表 -->
+      <div class="space-y-2">
+        <div class="flex items-center justify-between text-xs font-black text-comicBorder px-1">
+          <span class="text-sm">花費明細紀錄</span>
+          <span class="text-[11px] text-subGray font-normal">雲端即時同步 • 點擊可隨時修改</span>
+        </div>
+        <div id="expense-records" class="space-y-2.5">
+          <!-- JS 渲染 -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================= TAB 5: 跨國交通與簽證攻略 ========================= -->
+    <div id="tab-transit" class="hidden space-y-3">
+      <div class="px-1">
+        <h2 class="text-xl font-black text-comicBorder">四國陸空交通 & 最省錢簽證攻略 🚆</h2>
+        <div class="text-xs text-subGray font-bold mt-0.5">不走回頭路閉環動線、夜臥巴士訂票神器與邊境通關防坑指南！</div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <!-- 卡片 1：簽證總整理 -->
+        <div class="bg-white comic-box p-4 shadow-comic-sm space-y-2.5 text-xs font-bold text-comicBorder">
+          <div class="flex items-center gap-2 border-b-2 border-neutral-100 pb-2">
+            <span class="text-2xl">🛂</span>
+            <div>
+              <div class="text-sm font-black">四國最省錢簽證配置（總計約 US$120）</div>
+              <div class="text-subGray text-[11px]">完全自行辦理，免找旅行社代辦</div>
+            </div>
+          </div>
+          <ul class="list-disc pl-4 space-y-1.5 text-subGray">
+            <li><strong class="text-comicBorder">🇻🇳 越南（進出兩次）</strong>：出發前 7～10 天上官網 <code>evisa.gov.vn</code> 辦 <strong>90天多次入境 E-Visa (US$50)</strong>，首站口岸選 <strong>Da Nang Int Airport</strong>，務必印出紙本 2 份。</li>
+            <li><strong class="text-comicBorder">🇱🇦 寮國（泰莊口岸陸路）</strong>：現場辦<strong>落地簽 (US$40)</strong>，自備 2 張兩吋白底照與剛好的美金平整新鈔。</li>
+            <li><strong class="text-comicBorder">🇹🇭 泰國（廊開陸路）</strong>：享<strong>免簽證 (NT$0)</strong>，入境前 3 天內線上填寫免費泰國數位入境卡 (TDAC)。</li>
+            <li><strong class="text-comicBorder">🇰🇭 柬埔寨（波貝口岸陸路）</strong>：現場辦<strong>落地簽 (US$30)</strong>，自備 1 張兩吋照、30 美金新鈔，並提前於 <code>arrival.gov.kh</code> 免費填寫電子入境卡。</li>
+          </ul>
+        </div>
+
+        <!-- 卡片 2：跨國陸路與高鐵接駁 -->
+        <div class="bg-white comic-box p-4 shadow-comic-sm space-y-2.5 text-xs font-bold text-comicBorder">
+          <div class="flex items-center gap-2 border-b-2 border-neutral-100 pb-2">
+            <span class="text-2xl">🚌</span>
+            <div>
+              <div class="text-sm font-black">三大跨國陸路與鐵道接駁重點</div>
+              <div class="text-subGray text-[11px]">用 12Go Asia / LCR Ticket 提前 2～3 天訂票</div>
+            </div>
+          </div>
+          <ul class="list-disc pl-4 space-y-1.5 text-subGray">
+            <li><strong class="text-comicBorder">北越 ➔ 寮國</strong>：河內美亭站搭夜臥巴士到<strong>奠邊府</strong>（10hr），清晨 05:30 轉跨境小巴經<strong>泰莊口岸</strong>進入寮國孟夸，再轉車抵龍坡邦。</li>
+            <li><strong class="text-comicBorder">寮國境內移動</strong>：務必使用 <strong>LCR Ticket App</strong> 提前 3 天搶中老鐵路動車票，龍坡邦 ➔ 萬榮 ➔ 永珍各只需約 1 小時。</li>
+            <li><strong class="text-comicBorder">寮國 ➔ 清邁</strong>：永珍過友誼大橋至泰國<strong>廊開</strong>，轉夜臥火車或夜巴直達清邁（省下一晚住宿費）。</li>
+            <li><strong class="text-comicBorder">清邁 ➔ 暹粒 ➔ 胡志明</strong>：清邁夜車南下曼谷，轉直達跨境巴士經<strong>波貝口岸</strong>到暹粒；最後從暹粒搭大巴經金邊、走<strong>木牌口岸</strong>回胡志明市。</li>
+          </ul>
+        </div>
+
+        <!-- 卡片 3：香港登機離境證明提醒 -->
+        <div class="bg-white comic-box p-4 shadow-comic-sm space-y-2.5 text-xs font-bold text-comicBorder">
+          <div class="flex items-center gap-2 border-b-2 border-neutral-100 pb-2">
+            <span class="text-2xl">🛫</span>
+            <div>
+              <div class="text-sm font-black">12/09 香港飛峴港 (HX546) 登機提醒</div>
+              <div class="text-subGray text-[11px]">香港國際機場 T2 報到 • PNR: JMGX6P</div>
+            </div>
+          </div>
+          <ul class="list-disc pl-4 space-y-1.5 text-subGray">
+            <li>持單程機票飛峴港時，香港航空地勤通常會查驗「離開越南的證明」。</li>
+            <li>報到時直接出示<strong>「01/18 越捷 VJ842 胡志明市 ✈️ 台北（PNR: F3VCHJ）」返台機票</strong>＋<strong>紙本越南多次入境 E-Visa</strong>即可順利拿到登機證。</li>
+          </ul>
+        </div>
+
+        <!-- 卡片 4：各國叫車與必裝 App -->
+        <div class="bg-white comic-box p-4 shadow-comic-sm space-y-2.5 text-xs font-bold text-comicBorder">
+          <div class="flex items-center gap-2 border-b-2 border-neutral-100 pb-2">
+            <span class="text-2xl">📱</span>
+            <div>
+              <div class="text-sm font-black">各國市區叫車與工具 App 配置</div>
+              <div class="text-subGray text-[11px]">出發前在台灣先完成簡訊 OTP 註冊</div>
+            </div>
+          </div>
+          <ul class="list-disc pl-4 space-y-1.5 text-subGray">
+            <li><strong class="text-comicBorder">越南 / 泰國 / 柬埔寨</strong>：主力用 <strong>Grab</strong>（泰國搭 <strong>Bolt</strong> 更便宜；柬埔寨叫嘟嘟車用 <strong>PassApp</strong> 最道地）。</li>
+            <li><strong class="text-comicBorder">寮國專屬</strong>：寮國沒有 Grab，市區與高鐵站接駁請下載 <strong>LOCA</strong> 叫車。</li>
+            <li><strong class="text-comicBorder">訂票與通訊</strong>：<strong>12Go Asia</strong>、<strong>Baolau</strong>、<strong>Hostelworld</strong>、<strong>Zalo</strong>（聯絡越南民宿與巴士公司必備）。</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================= TAB 6: 輕量化隨身包清單 ========================= -->
+    <div id="tab-pack" class="hidden space-y-3">
+      <div class="px-1">
+        <h2 class="text-xl font-black text-comicBorder">7kg 登機極致輕量化背包清單 🎒</h2>
+        <div class="text-xs text-subGray font-bold mt-0.5">免託運走遍四國、兼顧遠端工作與 14°C~30°C 溫差！</div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <!-- 【證件與美金現鈔】 -->
+        <!-- 【數位遊牧與探險隨身裝備】 -->
+        <div class="bg-white comic-box p-3.5 shadow-comic-sm space-y-2">
+          <div class="font-black text-xs text-comicBorder flex items-center gap-1.5 pb-1 border-b border-neutral-100">
+            <span>📷</span> 【探險隨身與 3C 輕量組】
+          </div>
+          <div class="grid grid-cols-1 gap-1.5 text-xs font-bold text-comicBorder">
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="w-4 h-4 accent-comicBorder rounded"><span>相機 / 手機廣角鏡 ＋ 輕量化折疊筆電</span></label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="w-4 h-4 accent-comicBorder rounded"><span>65W 氮化鎵 (GaN) 單顆多孔充電頭</span></label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="w-4 h-4 accent-comicBorder rounded"><span>Type-C 快充線 × 2 ＋ 萬國轉接頭</span></label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="w-4 h-4 accent-comicBorder rounded"><span>10000mAh 輕薄行動電源（長途夜巴必備）</span></label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="w-4 h-4 accent-comicBorder rounded"><span>隨身防水小包（划獨木舟、瀑布玩水防濺濕）</span></label>
+          </div>
+        </div>
+
+        <!-- 【數位遊牧 3C 裝備】 -->
+        <div class="bg-white comic-box p-3.5 shadow-comic-sm space-y-2">
+          <div class="font-black text-xs text-comicBorder flex items-center gap-1.5 pb-1 border-b border-neutral-100">
+            <span>💻</span> 【遠端工作 3C 輕量組】
+          </div>
+          <div class="grid grid-cols-1 gap-1.5 text-xs font-bold text-comicBorder">
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="w-4 h-4 accent-comicBorder rounded"><span>輕薄筆電 ＋ 輕量化折疊筆電架</span></label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="w-4 h-4 accent-comicBorder rounded"><span>65W 氮化鎵 (GaN) 單顆多孔充電頭</span></label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="w-4 h-4 accent-comicBorder rounded"><span>Type-C 快充線 × 2 ＋ 萬國轉接頭</span></label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="w-4 h-4 accent-comicBorder rounded"><span>10000mAh 輕薄行動電源（長途夜巴必備）</span></label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="w-4 h-4 accent-comicBorder rounded"><span>降噪耳機（咖啡廳與夜臥巴士專注神器）</span></label>
+          </div>
+        </div>
+
+        <!-- 【衣物與生活精簡 333 原則】 -->
+        <div class="bg-white comic-box p-3.5 shadow-comic-sm space-y-2">
+          <div class="font-black text-xs text-comicBorder flex items-center gap-1.5 pb-1 border-b border-neutral-100">
+            <span>👕</span> 【333 快乾衣物與盥洗（壓縮收納）】
+          </div>
+          <div class="grid grid-cols-1 gap-1.5 text-xs font-bold text-comicBorder">
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="w-4 h-4 accent-comicBorder rounded"><span>排汗快乾短袖 / 美麗諾羊毛衣 × 3 件</span></label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="w-4 h-4 accent-comicBorder rounded"><span>可收納超輕薄羽絨外套（北越/寮國早晚用）</span></label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="w-4 h-4 accent-comicBorder rounded"><span>防潑水薄風衣（擋中越陣雨與清邁騎車風）</span></label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="w-4 h-4 accent-comicBorder rounded"><span>輕量快乾長褲 × 2 ＋ 短褲 × 1</span></label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="w-4 h-4 accent-comicBorder rounded"><span>固態洗髮餅、超細纖維快乾毛巾、密碼鎖</span></label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="w-4 h-4 accent-comicBorder rounded"><span>眼罩、耳塞（夜臥火車與青旅宿舍神物）</span></label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ========================= 底部固定導航列 ========================= -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-[#faf7ee]/95 backdrop-blur-md border-t-2 border-comicBorder px-3 py-2 z-40">
+    <div class="max-w-xl mx-auto flex items-center justify-around">
+      <button onclick="switchTab('home')" id="nav-home" class="flex flex-col items-center">
+        <div class="nav-icon-box w-12 h-8 rounded-2xl bg-appYellow border-2 border-comicBorder flex items-center justify-center shadow-comic-sm">
+          <i data-lucide="home" class="w-4 h-4 text-comicBorder"></i>
+        </div>
+        <span class="text-[11px] font-black text-comicBorder mt-0.5">首頁</span>
+      </button>
+
+      <button onclick="switchTab('itinerary')" id="nav-itinerary" class="flex flex-col items-center opacity-60">
+        <div class="nav-icon-box w-12 h-8 rounded-2xl border-2 border-comicBorder bg-white flex items-center justify-center">
+          <i data-lucide="calendar" class="w-4 h-4 text-comicBorder"></i>
+        </div>
+        <span class="text-[11px] font-bold text-comicBorder mt-0.5">行程</span>
+      </button>
+
+      <button onclick="switchTab('food')" id="nav-food" class="flex flex-col items-center opacity-60">
+        <div class="nav-icon-box w-12 h-8 rounded-2xl border-2 border-comicBorder bg-white flex items-center justify-center">
+          <i data-lucide="utensils" class="w-4 h-4 text-comicBorder"></i>
+        </div>
+        <span class="text-[11px] font-bold text-comicBorder mt-0.5">在地美食</span>
+      </button>
+
+      <button onclick="switchTab('expense')" id="nav-expense" class="flex flex-col items-center opacity-60">
+        <div class="nav-icon-box w-12 h-8 rounded-2xl border-2 border-comicBorder bg-white flex items-center justify-center">
+          <span class="text-sm font-black text-comicBorder">$</span>
+        </div>
+        <span class="text-[11px] font-bold text-comicBorder mt-0.5">記帳</span>
+      </button>
+
+      <button onclick="switchTab('transit')" id="nav-transit" class="flex flex-col items-center opacity-60">
+        <div class="nav-icon-box w-12 h-8 rounded-2xl border-2 border-comicBorder bg-white flex items-center justify-center">
+          <i data-lucide="compass" class="w-4 h-4 text-comicBorder"></i>
+        </div>
+        <span class="text-[11px] font-bold text-comicBorder mt-0.5">簽證交通</span>
+      </button>
+
+      <button onclick="switchTab('pack')" id="nav-pack" class="flex flex-col items-center opacity-60">
+        <div class="nav-icon-box w-12 h-8 rounded-2xl border-2 border-comicBorder bg-white flex items-center justify-center">
+          <i data-lucide="briefcase" class="w-4 h-4 text-comicBorder"></i>
+        </div>
+        <span class="text-[11px] font-bold text-comicBorder mt-0.5">7kg背包</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- 彈窗：新增活動 -->
+  <div id="spot-modal" class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-[#faf7ee] w-full max-w-sm comic-box p-4 space-y-3">
+      <div class="flex justify-between items-center">
+        <h3 class="font-black text-sm text-comicBorder" id="spot-modal-title">新增行程</h3>
+        <button onclick="closeModal('spot-modal')" class="text-sm font-bold text-comicBorder">✕</button>
+      </div>
+      <div class="space-y-2 text-xs font-bold">
+        <input type="text" id="spot-time" placeholder="日期或時段 (例如 12/11 下午)" class="w-full bg-white p-2.5 rounded-xl border-2 border-comicBorder focus:outline-none">
+        <input type="text" id="spot-name" placeholder="景點、咖啡廳或移動名稱" class="w-full bg-white p-2.5 rounded-xl border-2 border-comicBorder focus:outline-none">
+        <input type="text" id="spot-desc" placeholder="詳細備註或交通說明" class="w-full bg-white p-2.5 rounded-xl border-2 border-comicBorder focus:outline-none">
+      </div>
+      <button onclick="saveSpot()" class="w-full py-2.5 bg-appYellow rounded-xl comic-box-md text-xs font-black shadow-comic-sm">儲存到此階段</button>
+    </div>
+  </div>
+
+  <!-- 彈窗：新增/編輯獨旅記帳 -->
+  <div id="expense-modal" class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-[#faf7ee] w-full max-w-sm comic-box p-4 space-y-3">
+      <div class="flex justify-between items-center">
+        <h3 class="font-black text-sm text-comicBorder" id="expense-modal-title">新增獨旅開銷</h3>
+        <button onclick="closeModal('expense-modal')" class="text-sm font-bold text-comicBorder">✕</button>
+      </div>
+      <input type="hidden" id="editing-exp-id" value="">
+      <div class="space-y-2 text-xs font-bold">
+        <div>
+          <label class="block text-subGray mb-1 text-[11px]">開銷項目名稱</label>
+          <input type="text" id="exp-name" placeholder="如：香港飛峴港機票、越南多次簽證、龍坡邦青旅" class="w-full bg-white p-2.5 rounded-xl border-2 border-comicBorder focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-subGray mb-1 text-[11px]">金額與幣別</label>
+          <div class="flex gap-2">
+            <input type="number" id="exp-amount" placeholder="金額" step="any" class="flex-1 bg-white p-2.5 rounded-xl border-2 border-comicBorder font-mono focus:outline-none">
+            <select id="exp-currency" class="bg-white p-2.5 rounded-xl border-2 border-comicBorder">
+              <option value="TWD">NT$ 台幣</option>
+              <option value="VND">₫ 越南盾</option>
+              <option value="LAK">₭ 寮國基普</option>
+              <option value="THB">฿ 泰銖</option>
+              <option value="USD">$ 美金/柬埔寨</option>
+              <option value="HKD">HK$ 港幣</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-subGray mb-1 text-[11px]">開銷分類</label>
+          <select id="exp-category" class="w-full bg-white p-2.5 rounded-xl border-2 border-comicBorder">
+            <option value="✈️ 機票與跨國交通">✈️ 機票與跨國交通</option>
+            <option value="🛂 簽證與網卡">🛂 簽證與網卡</option>
+            <option value="🛏️ 青旅與旅居住宿">🛏️ 青旅與旅居住宿</option>
+            <option value="☕ 咖啡廳辦公與餐飲">☕ 咖啡廳辦公與餐飲</option>
+            <option value="🏛️ 景點門票與體驗">🏛️ 景點門票與體驗</option>
+          </select>
+        </div>
+      </div>
+      <button onclick="saveExpense()" id="expense-modal-submit" class="w-full py-2.5 bg-appYellow rounded-xl comic-box-md text-xs font-black shadow-comic-sm">確認記帳</button>
+    </div>
+  </div>
+
+  <!-- 彈窗：Dylan 專屬編輯驗證 -->
+  <div id="auth-modal" class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-[#faf7ee] w-full max-w-sm comic-box p-4 space-y-3">
+      <div class="flex justify-between items-center">
+        <div class="flex items-center gap-1.5">
+          <span class="text-lg">🔐</span>
+          <h3 class="font-black text-sm text-comicBorder">Dylan 專屬編輯解鎖</h3>
+        </div>
+        <button onclick="closeModal('auth-modal')" class="text-sm font-bold text-comicBorder">✕</button>
+      </div>
+
+      <div class="text-xs text-subGray font-bold leading-relaxed">
+        輸入專屬通行碼即可隨時新增或調整這趟 37 天中南半島獨旅行程與記帳（預設通行碼為 <code class="bg-white px-1 rounded border border-neutral-300 text-comicBorder">1111</code>）。
+      </div>
+
+      <div class="space-y-2 text-xs font-bold pt-1">
+        <div>
+          <label class="block text-comicBorder mb-1">專屬通行密碼</label>
+          <input type="password" id="auth-passcode" placeholder="請輸入 4 位數通行碼" maxlength="8" class="w-full bg-white p-2.5 rounded-xl border-2 border-comicBorder font-mono text-center text-lg focus:outline-none">
+        </div>
+
+        <div class="pt-1">
+          <label class="flex items-center gap-2 cursor-pointer select-none">
+            <input type="checkbox" id="auth-remember-device" checked class="w-4 h-4 accent-comicBorder rounded">
+            <span class="text-xs font-bold text-comicBorder">記住這台裝置（下次開啟自動登入，免再輸密碼）</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="space-y-2 pt-2">
+        <button onclick="unlockEditor()" class="w-full py-2.5 bg-appYellow rounded-xl comic-box-md text-xs font-black shadow-comic-sm active:scale-95">驗證並解鎖編輯權限</button>
+        <button onclick="lockToReadOnly()" class="w-full py-2 bg-white rounded-xl comic-box-md text-xs font-bold text-subGray">切換為訪客唯讀模式</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 提示浮動框 Toast -->
+  <div id="toast" class="fixed top-6 left-1/2 -translate-x-1/2 bg-comicBorder text-white px-4 py-2 rounded-full text-xs font-black opacity-0 pointer-events-none transition-opacity duration-300 z-50 shadow-lg">
+    提示訊息
+  </div>
+
+  <script>
+    // ================= 預設 42 天九大階段在地深度探索排程 =================
+    const defaultTripData = {
+      1: [
+        { time: "12/08 09:50", name: "桃園出發 ➔ 飛抵香港 (EVA BR 867)", desc: "11:50 抵達香港機場，搭機場快綫進市區吃茶餐廳、深水埗或廟街散步暖身" },
+        { time: "12/09 16:30", name: "香港機場 T2 報到 (HX 546 • PNR: JMGX6P)", desc: "備妥 01/18 越捷返台電子機票與紙本越簽給地勤查驗，19:00 起飛前往峴港" },
+        { time: "12/09 20:05", name: "飛抵峴港機場 (DAD) ➔ 美溪沙灘入住", desc: "票號 851-2307899293，入境後叫 Grab 進市區吃一碗道地廣南麵 (Mì Quảng)" }
+      ],
+      2: [
+        { time: "12/10 - 12/11", name: "峴港山茶半島靈應寺 ＆ 五行山溶洞", desc: "騎車或叫車環繞山茶半島看海景與巨型觀音像，探訪大理石山洞穴佛寺與觀景台" },
+        { time: "12/12 週六", name: "會安古鎮 (Hoi An) 燈籠夜色與水燈", desc: "下午前往世界遺產會安古鎮，逛手工燈籠街、吃 Bánh Mì Phượng 法國麵包、搭小船放水燈" },
+        { time: "12/13 週日", name: "迦南島竹籃船體驗 ＆ 美溪沙灘放空", desc: "上午體驗會安水椰林特色圓形竹籃船（簸箕船），下午回美溪沙灘喝越式椰子咖啡" }
+      ],
+      3: [
+        { time: "12/14 - 12/15", name: "峴港 ➔ 順化最美海岸觀景火車 ＆ 順化皇城", desc: "搭乘越南統一鐵路穿越海雲關與靈姑灣（約 2.5 hr），參觀順化皇城、天姥寺與東巴市場牛肉粉" },
+        { time: "12/15 傍晚", name: "順化搭乘夜臥巴士北上寧平 (約 7.5 hr)", desc: "傍晚出發，清晨抵達喀斯特山水秘境寧平省，省下一晚住宿費" },
+        { time: "12/16 - 12/18", name: "寧平「陸龍灣」手搖船 ＆ 臥龍山登頂", desc: "搭長安（Tràng An）與三谷手搖船穿越石灰岩水洞，黃昏登臥龍山 500 階俯瞰整片喀斯特峰林" }
+      ],
+      4: [
+        { time: "12/19 上午", name: "寧平搭商務小巴進河內 (約 2 hr)", desc: "入住河內三十六古街背包客區，下午探訪火車街咖啡館與聖若瑟大教堂" },
+        { time: "12/20 - 12/21", name: "世界遺產下龍灣遊船 ＆ 古街夜市", desc: "搭乘遊船穿梭下龍灣海上桂林、探訪驚訝洞與英雄島；晚上大啖歐巴馬烤肉米線與創始雞蛋咖啡" },
+        { time: "12/22 - 12/23", name: "河內文廟、同春市場 ➔ 夜車往奠邊府", desc: "深度逛河內在地傳統市場與昇龍水上木偶戲，12/23 傍晚在美亭站搭夜臥巴士往奠邊府" }
+      ],
+      5: [
+        { time: "12/24 平安夜", name: "奠邊府跨境小巴 ➔ 泰莊口岸進寮國龍坡邦", desc: "05:30 發車跨越邊境（備妥 US$40 新鈔＋2張照片辦寮國落地簽），傍晚抵達法式古都龍坡邦過聖誕夜" },
+        { time: "12/25 - 12/26", name: "【龍坡邦聖誕週】清晨僧侶布施 ＆ 香通寺", desc: "清晨 05:30 體驗莊嚴的僧侶托缽布施與早市文化，走訪金碧輝煌的香通寺與湄公河畔咖啡館" },
+        { time: "12/27 - 12/28", name: "關西瀑布蒂芬妮藍池跳水 ＆ 普西山日落", desc: "騎機車前往關西瀑布（Kuang Si Falls）天然石灰岩梯池戲水，傍晚登普西山看湄公河夕陽" }
+      ],
+      6: [
+        { time: "12/29 上午", name: "搭乘「中老鐵路 (LCR)」動車往萬榮", desc: "體驗寮國現代化高鐵，僅需 55 分鐘穿越山脈隧道抵達戶外天堂萬榮（提前 3 天在 App 搶票）" },
+        { time: "12/30 全日", name: "萬榮南松河獨木舟、藍色瀉湖與山峰日落", desc: "白天體驗南松河皮划艇漂流與鐘乳石溶洞探險，傍晚到 Pull Mind Cafe 賞熱氣球與喀斯特晚霞" },
+        { time: "12/31 - 01/01", name: "中老鐵路至首都永珍 ➔ 湄公河畔跨年倒數", desc: "參觀凱旋門、金色塔鑾與香昆寺奇特佛像公園，跨年夜在永珍湄公河夜市與各國旅人迎接 2027" }
+      ],
+      7: [
+        { time: "01/02", name: "永珍過友誼大橋入泰 ➔ 夜車直達清邁", desc: "經廊開口岸免簽入境泰國，轉乘夜臥火車或夜巴前往泰北蘭納古都清邁" },
+        { time: "01/03 - 01/06", name: "清邁古城寺廟巡禮、雙龍寺與泰式廚藝課", desc: "走訪帕辛寺、柴迪隆寺與素帖山雙龍寺，報名半日泰式料理烹飪課（逛傳統市場現學現煮）" },
+        { time: "01/07 - 01/10", name: "拜縣 (Pai) 山城騎行 ＆ 藝術村週末市集", desc: "搭小巴走 762 彎前往山城拜縣看大峽谷與野溪溫泉，週末回清邁逛真心市集與 Baan Kang Wat 藝術村" }
+      ],
+      8: [
+        { time: "01/11 - 01/12", name: "清邁夜車南下曼谷 ➔ 跨境巴士進暹粒", desc: "經波貝口岸辦柬埔寨落地簽（備 US$30 新鈔＋1張照片），傍晚抵達吳哥門戶暹粒" },
+        { time: "01/13 全日", name: "小吳哥蓮花池日出 ＆ 巴戎寺高棉微笑", desc: "購買吳哥 3 日券，清晨看金色日出映照護城河，探索大吳哥城、巴戎寺與古墓奇兵塔普倫寺" },
+        { time: "01/14 全日", name: "外圈女王宮精雕 ＆ 洞里薩湖水上村落", desc: "欣賞粉紅砂岩女王宮細膩浮雕，下午乘船探訪洞里薩湖水上高腳屋聚落，晚上逛暹粒老市場" }
+      ],
+      9: [
+        { time: "01/15 - 01/16", name: "暹粒 ➔ 金邊皇宮 ➔ 木牌口岸閉環回胡志明市", desc: "可先在金邊停留 1 晚看湄公河景，再搭跨國巴士經木牌口岸持多次越簽順利回到胡志明市" },
+        { time: "01/17 全日", name: "西貢街頭漫步：粉紅教堂、咖啡公寓與河粉", desc: "走訪新定粉紅教堂、百年中央郵局、咖啡公寓，大啖炭火越式煎餅與錦麗牛肉河粉" },
+        { time: "01/18 13:35", name: "胡志明新山一 T2 (VJ 842) ✈️ 返抵桃園 T1", desc: "訂位代號 F3VCHJ，13:35 起飛、18:00 抵達台北，圓滿結束 42 天跨四國在地探索環線！" }
+      ]
+    };
+
+    let tripData = JSON.parse(JSON.stringify(defaultTripData));
+    let curDay = 1;
+
+    const dayThemeSummaries = {
+      1: "階段 1：12/08 桃園出發 ➔ 香港快閃吃喝 ➔ 12/09 晚間 HX546 飛抵峴港",
+      2: "階段 2：峴港山茶半島海景 ➔ 會安燈籠古鎮水燈 ＆ 竹籃船體驗",
+      3: "階段 3：越南最美海岸鐵道 ➔ 順化皇城 ➔ 寧平陸龍灣手搖船",
+      4: "階段 4：河內三十六古街 ➔ 下龍灣海上桂林 ➔ 夜車往邊境奠邊府",
+      5: "階段 5：泰莊口岸陸路入寮 ➔ 龍坡邦聖誕慢活、清晨布施與關西瀑布",
+      6: "階段 6：搭乘中老鐵路高鐵！萬榮獨木舟與山景 ➔ 首都永珍跨年倒數",
+      7: "階段 7：泰北清邁蘭納文化！雙龍寺、廚藝課、藝術村與拜縣山城",
+      8: "階段 8：波貝口岸陸路進柬埔寨 ➔ 暹粒吳哥窟日出奇蹟與洞里薩湖",
+      9: "階段 9：金邊 ➔ 木牌口岸閉環回西貢 ➔ 01/18 越捷 VJ842 平安返台！"
+    };
+
+    let expenses = [];
+
+    // 各外幣對新台幣 (TWD) 基準匯率
+    let RATES_TO_TWD = {
+      TWD: 1,
+      VND: 0.00126, // 1 VND ≈ 0.00126 TWD (1 TWD ≈ 790 VND)
+      LAK: 0.00148, // 1 LAK ≈ 0.00148 TWD (1 TWD ≈ 675 LAK)
+      THB: 0.94,    // 1 THB ≈ 0.94 TWD
+      USD: 32.2,    // 1 USD ≈ 32.2 TWD
+      HKD: 4.14     // 1 HKD ≈ 4.14 TWD
+    };
+
+    let activeCalcCurrency = 'VND';
+
+    const quickAmountsByCurrency = {
+      VND: [
+        { val: 35000, label: '3.5萬₫ (河粉/咖啡)' },
+        { val: 80000, label: '8萬₫ (精品咖啡)' },
+        { val: 250000, label: '25萬₫ (青旅一晚)' },
+        { val: 450000, label: '45萬₫ (夜臥巴士)' }
+      ],
+      LAK: [
+        { val: 35000, label: '3.5萬₭ (寮國咖啡)' },
+        { val: 80000, label: '8萬₭ (夜市晚餐)' },
+        { val: 180000, label: '18萬₭ (中老高鐵)' },
+        { val: 300000, label: '30萬₭ (住宿一晚)' }
+      ],
+      THB: [
+        { val: 50, label: '50฿ (泰北咖哩麵)' },
+        { val: 120, label: '120฿ (尼曼咖啡)' },
+        { val: 350, label: '350฿ (清邁青旅)' },
+        { val: 900, label: '900฿ (臥鋪火車)' }
+      ],
+      USD: [
+        { val: 5, label: '$5 (高棉午餐)' },
+        { val: 30, label: '$30 (柬埔寨簽證)' },
+        { val: 40, label: '$40 (寮國簽證)' },
+        { val: 62, label: '$62 (吳哥3日券)' }
+      ]
+    };
+
+    // ================= 辦公與美食分類篩選 =================
+    function filterFood(city) {
+      ['all', 'vn', 'la', 'th', 'kh'].forEach(key => {
+        const btn = document.getElementById(`food-filter-${key}`);
+        if (btn) {
+          if (key === city) {
+            btn.className = 'food-filter-pill comic-box-md bg-appYellow px-3 py-1 text-xs font-black shrink-0 shadow-comic-sm';
+          } else {
+            btn.className = 'food-filter-pill comic-box-md bg-white px-3 py-1 text-xs font-bold shrink-0';
+          }
+        }
+      });
+
+      const cards = document.querySelectorAll('.food-card');
+      cards.forEach(card => {
+        if (city === 'all' || card.dataset.city === city) {
+          card.classList.remove('hidden');
+        } else {
+          card.classList.add('hidden');
+        }
+      });
+    }
+
+    // ================= 權限控制 =================
+    const PASSCODE = "1111";
+    let currentUser = {
+      role: "Guest",
+      isAuthorized: false
+    };
+
+    function initAuthStatus() {
+      try {
+        const savedAuth = localStorage.getItem('indochina_dylan_auth') || sessionStorage.getItem('indochina_dylan_auth');
+        if (savedAuth === 'true') {
+          currentUser.role = 'Dylan';
+          currentUser.isAuthorized = true;
+        }
+      } catch (e) {}
+      updateAuthUI();
+    }
+
+    function updateAuthUI() {
+      const lockIcon = document.getElementById('auth-lock-icon');
+      const userLabel = document.getElementById('auth-user-label');
+
+      if (currentUser.isAuthorized) {
+        lockIcon.textContent = '🔓';
+        userLabel.textContent = 'Dylan (已解鎖)';
+      } else {
+        lockIcon.textContent = '🔒';
+        userLabel.textContent = '解鎖編輯';
+      }
+    }
+
+    function openAuthModal() {
+      document.getElementById('auth-passcode').value = '';
+      document.getElementById('auth-modal').classList.remove('hidden');
+    }
+
+    function unlockEditor() {
+      const inputPass = document.getElementById('auth-passcode').value.trim();
+      const rememberDevice = document.getElementById('auth-remember-device').checked;
+      
+      if (inputPass === PASSCODE) {
+        currentUser.role = 'Dylan';
+        currentUser.isAuthorized = true;
+        try {
+          if (rememberDevice) {
+            localStorage.setItem('indochina_dylan_auth', 'true');
+          } else {
+            sessionStorage.setItem('indochina_dylan_auth', 'true');
+          }
+        } catch(e) {}
+        closeModal('auth-modal');
+        updateAuthUI();
+        renderDaySchedule();
+        renderExpenses();
+        showToast('🎉 歡迎回來 Dylan！已解鎖獨旅編輯權限');
+      } else {
+        showToast('❌ 通行碼錯誤！請輸入 1111');
+      }
+    }
+
+    function lockToReadOnly() {
+      currentUser.role = 'Guest';
+      currentUser.isAuthorized = false;
+      try {
+        localStorage.removeItem('indochina_dylan_auth');
+        sessionStorage.removeItem('indochina_dylan_auth');
+      } catch(e) {}
+      closeModal('auth-modal');
+      updateAuthUI();
+      renderDaySchedule();
+      renderExpenses();
+      showToast('🔒 已切換為訪客唯讀模式');
+    }
+
+    function checkEditPermission() {
+      if (!currentUser.isAuthorized) {
+        openAuthModal();
+        showToast('🔒 訪客模式僅能瀏覽，請先輸入通行碼解鎖！');
+        return false;
+      }
+      return true;
+    }
+
+    // ================= Firebase 獨立雲端資料路徑（已綁定 indochina-trip-2026 專屬專案） =================
+    const myFirebaseConfig = {
+      apiKey: "AIzaSyBE8JCPm7GMB3IdWTgLiiG9nhzx8yayjEU",
+      authDomain: "indochina-trip-2026.firebaseapp.com",
+      projectId: "indochina-trip-2026",
+      storageBucket: "indochina-trip-2026.firebasestorage.app",
+      messagingSenderId: "1000520404323",
+      appId: "1:1000520404323:web:6e3a27b93a11728f9b9756",
+      measurementId: "G-P75GP2RB3F"
+    };
+
+    let fbApp = null;
+    let fbDb = null;
+    let syncDocRef = null;
+    let expensesColRef = null;
+
+    function loadLocalCache() {
+      try {
+        const cachedExp = localStorage.getItem('indochina_solo_expenses');
+        if (cachedExp) {
+          const parsed = JSON.parse(cachedExp);
+          if (Array.isArray(parsed)) expenses = parsed;
+        }
+
+        const cachedTrip = localStorage.getItem('indochina_solo_trip');
+        if (cachedTrip) tripData = JSON.parse(cachedTrip);
+
+        const cachedRates = localStorage.getItem('indochina_solo_rates');
+        if (cachedRates) {
+          RATES_TO_TWD = { ...RATES_TO_TWD, ...JSON.parse(cachedRates) };
+        }
+      } catch (e) {}
+    }
+
+    function saveLocalCache() {
+      try {
+        localStorage.setItem('indochina_solo_expenses', JSON.stringify(expenses));
+        localStorage.setItem('indochina_solo_trip', JSON.stringify(tripData));
+        localStorage.setItem('indochina_solo_rates', JSON.stringify(RATES_TO_TWD));
+      } catch (e) {}
+    }
+
+    function initFirebaseSync() {
+      const statusBadge = document.getElementById('sync-status-badge');
+      if (typeof firebase === 'undefined') {
+        if (statusBadge) statusBadge.textContent = '本地離線記憶模式';
+        return;
+      }
+
+      try {
+        if (!firebase.apps.length) {
+          fbApp = firebase.initializeApp(myFirebaseConfig);
+        } else {
+          fbApp = firebase.app();
+        }
+
+        fbDb = firebase.firestore();
+        
+        firebase.auth().signInAnonymously().catch(e => {
+          console.debug("Auth note: ", e);
+        });
+
+        // 使用全新的獨立文件節點 indochina_solo_2026，與先前的沙巴行程完全隔離
+        syncDocRef = fbDb.collection("solo_trips").doc("dylan_indochina_2026");
+        expensesColRef = syncDocRef.collection("expenses_items");
+
+        syncDocRef.onSnapshot((doc) => {
+          if (doc.exists) {
+            const data = doc.data();
+            if (data.tripData && typeof data.tripData === 'object') {
+              tripData = data.tripData;
+            }
+            if (data.rates && typeof data.rates === 'object') {
+              RATES_TO_TWD = { ...RATES_TO_TWD, ...data.rates };
+            }
+            renderDaySchedule();
+            renderExpenses();
+            if (statusBadge) statusBadge.textContent = '🟢 獨旅雲端帳本即時同步中';
+          } else {
+            if (statusBadge) statusBadge.textContent = '🟢 雲端就緒（可隨時開始編輯）';
+          }
+        }, (error) => {
+          console.warn("Firestore main doc warning: ", error);
+          if (statusBadge) statusBadge.textContent = '本機快取連線中';
+        });
+
+        expensesColRef.onSnapshot((snapshot) => {
+          const items = [];
+          snapshot.forEach(doc => {
+            const d = doc.data();
+            if (d && d.id !== undefined) {
+              items.push(d);
+            }
+          });
+          items.sort((a, b) => Number(a.id) - Number(b.id));
+          expenses = items;
+          saveLocalCache();
+          renderExpenses();
+          if (statusBadge) statusBadge.textContent = '🟢 獨旅雲端帳本即時同步中';
+        }, (err) => {
+          console.warn("Sub-collection snapshot warning:", err);
+        });
+
+      } catch (err) {
+        console.error("Firebase setup error: ", err);
+        if (statusBadge) statusBadge.textContent = '離線記憶模式';
+      }
+    }
+
+    async function saveSingleExpenseToCloud(expenseItem) {
+      saveLocalCache();
+      if (!expensesColRef) return;
+      try {
+        const docId = String(expenseItem.id);
+        await expensesColRef.doc(docId).set({
+          ...expenseItem,
+          updatedAt: Date.now()
+        }, { merge: true });
+      } catch (err) {
+        console.warn("Save single expense error:", err);
+      }
+    }
+
+    async function deleteSingleExpenseFromCloud(id) {
+      saveLocalCache();
+      if (!expensesColRef) return;
+      try {
+        await expensesColRef.doc(String(id)).delete();
+      } catch (err) {
+        console.warn("Delete single expense error:", err);
+      }
+    }
+
+    async function pushMetaToCloud() {
+      saveLocalCache();
+      if (!syncDocRef) return;
+      try {
+        await syncDocRef.set({
+          tripData: tripData,
+          rates: RATES_TO_TWD,
+          updatedAt: Date.now()
+        }, { merge: true });
+      } catch (err) {
+        console.warn("Push meta warning: ", err);
+      }
+    }
+
+    async function forceManualCloudSync() {
+      if (!expensesColRef || !syncDocRef) {
+        showToast('目前為離線模式，資料已儲存在本機');
+        return;
+      }
+      try {
+        const subSnap = await expensesColRef.get();
+        const items = [];
+        subSnap.forEach(doc => items.push(doc.data()));
+        items.sort((a, b) => Number(a.id) - Number(b.id));
+        expenses = items;
+        saveLocalCache();
+        renderExpenses();
+        showToast('🔄 已從雲端同步最新獨旅資料！');
+      } catch (e) {
+        showToast('同步完成');
+      }
+    }
+
+    // ================= 多國即時匯率連線更新 =================
+    async function fetchLiveExchangeRate(showToastNotify = false) {
+      try {
+        const res = await fetch("https://open.er-api.com/v6/latest/TWD");
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.rates) {
+            if (data.rates.VND) RATES_TO_TWD.VND = 1 / data.rates.VND;
+            if (data.rates.LAK) RATES_TO_TWD.LAK = 1 / data.rates.LAK;
+            if (data.rates.THB) RATES_TO_TWD.THB = 1 / data.rates.THB;
+            if (data.rates.USD) RATES_TO_TWD.USD = 1 / data.rates.USD;
+            if (data.rates.HKD) RATES_TO_TWD.HKD = 1 / data.rates.HKD;
+
+            saveLocalCache();
+            updateRateSubtitle();
+            renderExpenses();
+            pushMetaToCloud();
+            if (showToastNotify) showToast('💱 四國即時匯率已全面更新！');
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn("Fetch live rate fallback: ", e);
+      }
+      updateRateSubtitle();
+      if (showToastNotify) showToast('目前已套用最新基準匯率');
+    }
+
+    function updateRateSubtitle() {
+      const el = document.getElementById('rate-update-time');
+      if (!el) return;
+      const rate = RATES_TO_TWD[activeCalcCurrency];
+      if (activeCalcCurrency === 'VND' || activeCalcCurrency === 'LAK') {
+        const perTwd = Math.round(1 / rate);
+        el.textContent = `即時匯率：1 新臺幣 ≈ ${perTwd.toLocaleString()} ${activeCalcCurrency}`;
+      } else {
+        el.textContent = `即時匯率：1 ${activeCalcCurrency} ≈ ${rate.toFixed(2)} 新臺幣`;
+      }
+    }
+
+    function onCalcCurrencyChange(curr) {
+      activeCalcCurrency = curr;
+      const labels = {
+        VND: '🇻🇳 越南盾 (VND)',
+        LAK: '🇱🇦 寮國基普 (LAK)',
+        THB: '🇹🇭 泰銖 (THB)',
+        USD: '🇰🇭 美金 (USD)'
+      };
+      document.getElementById('calc-foreign-label').textContent = labels[curr] || curr;
+      document.getElementById('calc-foreign-input').value = '';
+      document.getElementById('calc-twd-input').value = '';
+      updateRateSubtitle();
+      renderQuickCalcButtons();
+    }
+
+    function renderQuickCalcButtons() {
+      const container = document.getElementById('calc-quick-buttons');
+      if (!container) return;
+      const list = quickAmountsByCurrency[activeCalcCurrency] || [];
+      container.innerHTML = `<span class="text-subGray shrink-0">快速試算：</span>` + list.map(item => `
+        <button onclick="setCalcForeign(${item.val})" class="px-2 py-0.5 bg-neutral-100 hover:bg-appYellow rounded-lg border border-neutral-300 shrink-0">${item.label}</button>
+      `).join('');
+    }
+
+    function convertFromForeign(val) {
+      const num = parseFloat(val);
+      const twdInput = document.getElementById('calc-twd-input');
+      if (isNaN(num) || num <= 0) {
+        twdInput.value = '';
+        return;
+      }
+      twdInput.value = Math.round(num * RATES_TO_TWD[activeCalcCurrency]);
+    }
+
+    function convertFromTWD(val) {
+      const num = parseFloat(val);
+      const fInput = document.getElementById('calc-foreign-input');
+      if (isNaN(num) || num <= 0) {
+        fInput.value = '';
+        return;
+      }
+      const res = num / RATES_TO_TWD[activeCalcCurrency];
+      fInput.value = (activeCalcCurrency === 'VND' || activeCalcCurrency === 'LAK') ? Math.round(res) : res.toFixed(2);
+    }
+
+    function setCalcForeign(amt) {
+      const fInput = document.getElementById('calc-foreign-input');
+      fInput.value = amt;
+      convertFromForeign(amt);
+    }
+
+    // ================= 倒數計時器 =================
+    function initCountdown() {
+      const targetTime = new Date("2026-12-08T09:50:00+08:00").getTime();
+      const endTime = new Date("2027-01-18T18:00:00+08:00").getTime();
+
+      function update() {
+        const now = new Date().getTime();
+        let diff = targetTime - now;
+
+        const titleEl = document.getElementById('cd-title');
+
+        if (diff > 0) {
+          if (titleEl) titleEl.textContent = "距離 12/08 桃園出發還有";
+        } else if (now >= targetTime && now <= endTime) {
+          if (titleEl) titleEl.textContent = "🎒 Dylan 中南半島 42 天獨旅進行中！";
+          diff = endTime - now;
+        } else {
+          if (titleEl) titleEl.textContent = "🌟 42 天跨四國環線圓滿完成！";
+          document.getElementById('cd-day').textContent = "0";
+          document.getElementById('cd-hour').textContent = "00";
+          document.getElementById('cd-min').textContent = "00";
+          document.getElementById('cd-sec').textContent = "00";
+          return;
+        }
+
+        const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const h = String(Math.floor((diff / (1000 * 60 * 60)) % 24)).padStart(2, '0');
+        const m = String(Math.floor((diff / 1000 / 60) % 60)).padStart(2, '0');
+        const s = String(Math.floor((diff / 1000) % 60)).padStart(2, '0');
+
+        document.getElementById('cd-day').textContent = d;
+        document.getElementById('cd-hour').textContent = h;
+        document.getElementById('cd-min').textContent = m;
+        document.getElementById('cd-sec').textContent = s;
+      }
+
+      update();
+      setInterval(update, 1000);
+    }
+
+    function dropCoffee(e) {
+      const container = document.getElementById('coffee-container');
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const icons = ['☕', '🏮', '✨'];
+      for (let i = 0; i < 3; i++) {
+        const item = document.createElement('div');
+        item.className = 'coffee-drop';
+        item.textContent = icons[i % icons.length];
+        item.style.left = `${x + (Math.random() * 26 - 13)}px`;
+        item.style.top = `${y + (Math.random() * 14 - 7)}px`;
+        container.appendChild(item);
+
+        setTimeout(() => {
+          if (item.parentNode) item.parentNode.removeChild(item);
+        }, 850);
+      }
+
+      const lantern = document.getElementById('lantern-el');
+      if (lantern) {
+        lantern.style.transform = 'translate(290px, 32px) scale(1.12)';
+        setTimeout(() => {
+          lantern.style.transform = 'translate(290px, 42px) scale(1)';
+        }, 350);
+      }
+
+      const dylan = document.getElementById('person-dylan');
+      if (dylan) {
+        dylan.style.transform = 'translate(153px, 141px) rotate(-2deg)';
+        setTimeout(() => {
+          dylan.style.transform = 'translate(155px, 146px) rotate(0deg)';
+        }, 350);
+      }
+
+      showToast("☕ 乾杯！越南冰咖啡已滿格，遠端工作靈感爆發！");
+    }
+
+    function refreshWeather() {
+      const box = document.getElementById('weather-sun-box');
+      box.textContent = '☀️';
+      setTimeout(() => {
+        box.textContent = '🌤️';
+      }, 400);
+      showToast("已更新沿途涼季預報：清邁 24°C 晴爽、龍坡邦 21°C");
+    }
+
+    function switchTab(tabId) {
+      ['home', 'itinerary', 'food', 'expense', 'transit', 'pack'].forEach(t => {
+        const p = document.getElementById(`tab-${t}`);
+        const n = document.getElementById(`nav-${t}`);
+        if (p) p.classList.add('hidden');
+        if (n) {
+          n.classList.add('opacity-60');
+          const box = n.querySelector('.nav-icon-box');
+          if (box) {
+            box.classList.remove('bg-appYellow', 'shadow-comic-sm');
+            box.classList.add('bg-white');
+          }
+        }
+      });
+
+      const curP = document.getElementById(`tab-${tabId}`);
+      const curN = document.getElementById(`nav-${tabId}`);
+      if (curP) curP.classList.remove('hidden');
+      if (curN) {
+        curN.classList.remove('opacity-60');
+        const box = curN.querySelector('.nav-icon-box');
+        if (box) {
+          box.classList.remove('bg-white');
+          box.classList.add('bg-appYellow', 'shadow-comic-sm');
+        }
+      }
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function setDay(d) {
+      curDay = d;
+      for (let i = 1; i <= 9; i++) {
+        const btn = document.getElementById(`d-btn-${i}`);
+        if (btn) {
+          const subText = btn.querySelector('span:last-child');
+          if (i === d) {
+            btn.classList.add('bg-appYellow', 'shadow-comic-sm');
+            btn.classList.remove('bg-white');
+            if (subText) subText.classList.remove('text-subGray');
+          } else {
+            btn.classList.remove('bg-appYellow', 'shadow-comic-sm');
+            btn.classList.add('bg-white');
+            if (subText) subText.classList.add('text-subGray');
+          }
+        }
+      }
+
+      const bannerTitle = document.getElementById('day-theme-title');
+      const bannerBadge = document.querySelector('#day-theme-banner span:last-child');
+      if (bannerTitle) bannerTitle.textContent = dayThemeSummaries[d] || `階段 ${d} 行程規劃`;
+      if (bannerBadge) bannerBadge.textContent = `階段 ${d}`;
+
+      renderDaySchedule();
+    }
+
+    function renderDaySchedule() {
+      const container = document.getElementById('day-spots-container');
+      const list = tripData[curDay] || [];
+      if (list.length === 0) {
+        container.innerHTML = '<div class="text-center py-6 text-subGray font-bold text-xs">這階段暫無安排，點右上方新增活動吧！</div>';
+        return;
+      }
+
+      container.innerHTML = list.map((item, idx) => `
+        <div class="relative pl-6 pb-4 last:pb-1 group">
+          <div class="absolute left-2 top-2 -bottom-2 w-0.5 bg-neutral-300 group-last:hidden"></div>
+          <div class="absolute left-0.5 top-1.5 w-3.5 h-3.5 rounded-full border-2 border-comicBorder bg-appYellow"></div>
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-black text-xs text-comicBorder">${item.time}</span>
+            <button onclick="removeSpot(${idx})" class="text-[10px] text-rose-500 font-bold hover:underline ${currentUser.isAuthorized ? '' : 'hidden'}">刪除</button>
+          </div>
+          <div class="font-black text-sm text-comicBorder mt-0.5">${item.name}</div>
+          <div class="text-xs text-subGray font-bold mt-0.5 leading-snug">${item.desc}</div>
+        </div>
+      `).join('');
+    }
+
+    function openAddSpotModal() {
+      if (!checkEditPermission()) return;
+      document.getElementById('spot-modal-title').textContent = `新增至階段 ${curDay} 行程`;
+      document.getElementById('spot-time').value = '';
+      document.getElementById('spot-name').value = '';
+      document.getElementById('spot-desc').value = '';
+      document.getElementById('spot-modal').classList.remove('hidden');
+    }
+
+    function saveSpot() {
+      if (!checkEditPermission()) return;
+      const time = document.getElementById('spot-time').value.trim() || '彈性';
+      const name = document.getElementById('spot-name').value.trim();
+      const desc = document.getElementById('spot-desc').value.trim() || '無備註';
+      if (!name) return showToast('請填寫活動名稱！');
+
+      if (!tripData[curDay]) tripData[curDay] = [];
+      tripData[curDay].push({ time, name, desc });
+      closeModal('spot-modal');
+      renderDaySchedule();
+      pushMetaToCloud();
+      showToast('已新增行程並同步至雲端！');
+    }
+
+    function removeSpot(idx) {
+      if (!checkEditPermission()) return;
+      tripData[curDay].splice(idx, 1);
+      renderDaySchedule();
+      pushMetaToCloud();
+      showToast('已刪除該項行程');
+    }
+
+    // ================= 獨旅多幣別帳務統計渲染 =================
+    function renderExpenses() {
+      let grandTWD = 0;
+      let fixedTWD = 0;
+      let localTWD = 0;
+
+      let sumVND = 0;
+      let sumLAK = 0;
+      let sumTHB = 0;
+      let sumUSD = 0;
+
+      expenses.forEach(e => {
+        const amt = parseFloat(e.amount) || 0;
+        const curr = e.currency || 'TWD';
+        const rate = RATES_TO_TWD[curr] || 1;
+        const inTWD = amt * rate;
+
+        grandTWD += inTWD;
+        if (curr === 'TWD' || curr === 'HKD' || (e.category && (e.category.includes('機票') || e.category.includes('簽證')))) {
+          fixedTWD += inTWD;
+        } else {
+          localTWD += inTWD;
+        }
+
+        if (curr === 'VND') sumVND += amt;
+        if (curr === 'LAK') sumLAK += amt;
+        if (curr === 'THB') sumTHB += amt;
+        if (curr === 'USD') sumUSD += amt;
+      });
+
+      document.getElementById('solo-grand-twd').textContent = Math.round(grandTWD).toLocaleString();
+      document.getElementById('solo-daily-avg').textContent = Math.round(grandTWD / 42).toLocaleString();
+      document.getElementById('solo-fixed-twd').textContent = Math.round(fixedTWD).toLocaleString();
+      document.getElementById('solo-local-twd').textContent = Math.round(localTWD).toLocaleString();
+
+      document.getElementById('sum-vnd').textContent = Math.round(sumVND).toLocaleString();
+      document.getElementById('sum-lak').textContent = Math.round(sumLAK).toLocaleString();
+      document.getElementById('sum-thb').textContent = Math.round(sumTHB).toLocaleString();
+      document.getElementById('sum-usd').textContent = sumUSD.toFixed(1);
+
+      const currencySymbols = {
+        TWD: 'NT$ ',
+        VND: '₫ ',
+        LAK: '₭ ',
+        THB: '฿ ',
+        USD: '$ ',
+        HKD: 'HK$ '
+      };
+
+      const listEl = document.getElementById('expense-records');
+      if (expenses.length === 0) {
+        listEl.innerHTML = '<div class="bg-white rounded-2xl p-6 comic-box-md text-center text-xs font-bold text-subGray">目前尚無記帳項目，點右上方「＋ 記一筆」開始記錄機票、簽證或旅費！</div>';
+        return;
+      }
+
+      listEl.innerHTML = expenses.slice().reverse().map(e => {
+        const amt = parseFloat(e.amount) || 0;
+        const curr = e.currency || 'TWD';
+        const approxTWD = Math.round(amt * (RATES_TO_TWD[curr] || 1));
+        const cat = e.category || '☕ 咖啡廳辦公與餐飲';
+
+        return `
+          <div class="bg-white rounded-2xl p-3.5 comic-box-md flex items-center justify-between text-xs font-bold shadow-comic-sm">
+            <div class="flex-1 mr-2 cursor-pointer" onclick="openEditExpenseModal('${e.id}')" title="點擊編輯此筆花費">
+              <div class="text-sm font-black text-comicBorder">${e.name}</div>
+              <div class="text-subGray text-[11px] mt-1 flex items-center gap-2 flex-wrap">
+                <span class="inline-flex items-center bg-[#faf7ee] text-comicBorder px-2 py-0.5 rounded-full border border-neutral-300 text-[10px] font-black">${cat}</span>
+                ${curr !== 'TWD' ? `<span>≈ NT$ ${approxTWD.toLocaleString()}</span>` : ''}
+              </div>
+            </div>
+            <div class="text-right shrink-0">
+              <div class="font-mono font-black text-base text-comicBorder cursor-pointer" onclick="openEditExpenseModal('${e.id}')">
+                ${currencySymbols[curr] || ''}${amt.toLocaleString()}
+              </div>
+              <div class="flex items-center justify-end gap-2.5 mt-1">
+                <button onclick="openEditExpenseModal('${e.id}')" class="text-[11px] text-blue-600 font-bold hover:underline flex items-center gap-0.5 ${currentUser.isAuthorized ? '' : 'hidden'}">
+                  <span>✏️</span><span>編輯</span>
+                </button>
+                <button onclick="removeExpense('${e.id}')" class="text-[11px] text-rose-500 font-bold hover:underline flex items-center gap-0.5 ${currentUser.isAuthorized ? '' : 'hidden'}">
+                  <span>🗑️</span><span>刪除</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function openExpenseModal() {
+      if (!checkEditPermission()) return;
+      document.getElementById('expense-modal-title').textContent = '新增獨旅開銷';
+      document.getElementById('expense-modal-submit').textContent = '確認記帳';
+      document.getElementById('editing-exp-id').value = '';
+      document.getElementById('exp-name').value = '';
+      document.getElementById('exp-amount').value = '';
+      document.getElementById('exp-currency').value = 'TWD';
+      document.getElementById('exp-category').value = '✈️ 機票與跨國交通';
+      document.getElementById('expense-modal').classList.remove('hidden');
+    }
+
+    function openEditExpenseModal(id) {
+      if (!checkEditPermission()) return;
+      const target = expenses.find(x => String(x.id) === String(id));
+      if (!target) return;
+
+      document.getElementById('expense-modal-title').textContent = '修改獨旅開銷 ✏️';
+      document.getElementById('expense-modal-submit').textContent = '更新儲存';
+      document.getElementById('editing-exp-id').value = target.id;
+      document.getElementById('exp-name').value = target.name;
+      document.getElementById('exp-amount').value = target.amount;
+      document.getElementById('exp-currency').value = target.currency || 'TWD';
+      document.getElementById('exp-category').value = target.category || '☕ 咖啡廳辦公與餐飲';
+
+      document.getElementById('expense-modal').classList.remove('hidden');
+    }
+
+    function saveExpense() {
+      if (!checkEditPermission()) return;
+      const editId = document.getElementById('editing-exp-id').value;
+      const name = document.getElementById('exp-name').value.trim();
+      const amount = parseFloat(document.getElementById('exp-amount').value);
+      const currency = document.getElementById('exp-currency').value;
+      const category = document.getElementById('exp-category').value;
+
+      if (!name || isNaN(amount) || amount <= 0) return showToast('請填寫完整名稱與有效金額！');
+
+      if (editId) {
+        const idx = expenses.findIndex(x => String(x.id) === String(editId));
+        if (idx !== -1) {
+          expenses[idx].name = name;
+          expenses[idx].amount = amount;
+          expenses[idx].currency = currency;
+          expenses[idx].category = category;
+          closeModal('expense-modal');
+          renderExpenses();
+          saveSingleExpenseToCloud(expenses[idx]);
+          showToast('✏️ 已更新此筆獨旅花費！');
+        }
+      } else {
+        const uniqueId = Date.now() * 1000 + Math.floor(Math.random() * 1000);
+        const newItem = {
+          id: uniqueId,
+          name,
+          amount,
+          currency,
+          category
+        };
+        expenses.push(newItem);
+        closeModal('expense-modal');
+        renderExpenses();
+        saveSingleExpenseToCloud(newItem);
+        showToast('✅ 記帳成功！已寫入獨旅雲端帳本');
+      }
+    }
+
+    function removeExpense(id) {
+      if (!checkEditPermission()) return;
+      expenses = expenses.filter(x => String(x.id) !== String(id));
+      renderExpenses();
+      deleteSingleExpenseFromCloud(id);
+      showToast('🗑️ 已刪除該筆花費');
+    }
+
+    function copySplitResult() {
+      const grand = document.getElementById('solo-grand-twd').textContent;
+      const daily = document.getElementById('solo-daily-avg').textContent;
+      const fixed = document.getElementById('solo-fixed-twd').textContent;
+      const local = document.getElementById('solo-local-twd').textContent;
+
+      const copyStr = `【Dylan 42天中南半島獨旅帳目統計】\n💰 累計總花費：約 NT$ ${grand}（平均每日 NT$ ${daily}）\n✈️ 事前機票簽證：NT$ ${fixed}\n🍜 當地食宿交通：NT$ ${local}`;
+      
+      const dummy = document.createElement('textarea');
+      document.body.appendChild(dummy);
+      dummy.value = copyStr;
+      dummy.select();
+      document.execCommand('copy');
+      document.body.removeChild(dummy);
+      showToast('📋 已複製獨旅總開銷統計到剪貼簿！');
+    }
+
+    function shareTrip() {
+      const dummy = document.createElement('textarea');
+      document.body.appendChild(dummy);
+      dummy.value = window.location.href;
+      dummy.select();
+      document.execCommand('copy');
+      document.body.removeChild(dummy);
+      showToast('🔗 已複製 Dylan 中南半島獨旅連結！');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.remove('opacity-0', 'pointer-events-none');
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'pointer-events-none');
+      }, 2200);
+    }
+
+    // 啟動流程
+    window.addEventListener('DOMContentLoaded', () => {
+      loadLocalCache();
+      initCountdown();
+      initAuthStatus();
+      setDay(1);
+      renderQuickCalcButtons();
+      updateRateSubtitle();
+      renderExpenses();
+      if (window.lucide) lucide.createIcons();
+
+      fetchLiveExchangeRate(false);
+      initFirebaseSync();
+    });
+  </script>
+</body>
+</html>
